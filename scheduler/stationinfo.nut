@@ -17,9 +17,9 @@
  * Copyright 2014 James Anderson
  */
  
-class StationManager
+class StationInfo
 {
-	static function StationString(station);
+	static function ToString(station);
 	
 	static function StationCargoString(station, cargo) ;
 	
@@ -43,13 +43,13 @@ class StationManager
 };
 
 
-function StationManager::StationString(station)
+function StationInfo::ToString(station)
 {
 	return "station #" + station.tostring() + " " + AIStation.GetName(station)
 }
 	
 	
-function StationManager::StationCargoString(station, cargo) 
+function StationInfo::StationCargoString(station, cargo) 
 {
 	local output = AIStation.GetCargoWaiting(station, cargo) + " " + AICargo.GetCargoLabel(cargo) + " waiting";
 	
@@ -61,19 +61,19 @@ function StationManager::StationCargoString(station, cargo)
 	return output;
 }
 
-function StationManager::PrintCargoList(stations, cargo)
+function StationInfo::PrintCargoList(stations, cargo)
 {
 	foreach( station, rating in stations)
 	{
 		//local cargowaiting = AIStation.GetCargoWaiting(station, cargo); 
-		AILog.Info("    " + StationManager.StationString(station) + " " + StationManager.StationCargoString(station, cargo) + " score " + rating.tostring());
+		AILog.Info("    " + StationInfo.StationCargoString(station, cargo) + " score " + rating.tostring() + " @ " + StationInfo.ToString(station));
 	}
 }
 
 
 
 /* Stations with an existing stockpile of cargo */
-function StationManager::StationsWithStockpile(station_type, cargo)
+function StationInfo::StationsWithStockpile(station_type, cargo)
 {
 	AILog.Info("StationsWithStockpile of cargo " + AICargo.GetCargoLabel(cargo)); 
 	
@@ -88,7 +88,7 @@ function StationManager::StationsWithStockpile(station_type, cargo)
 }
 
 /* Returns list of stations which supply the specified cargo */
-function StationManager::StationsWithSupply(station_type, cargo)
+function StationInfo::StationsWithSupply(station_type, cargo)
 {
 	AILog.Info("StationsWithSupply of cargo " + AICargo.GetCargoLabel(cargo)); 
 	
@@ -98,7 +98,7 @@ function StationManager::StationsWithSupply(station_type, cargo)
 	{		
 		if(SLStation.IsCargoSupplied(station, cargo))
 		{
-		  AILog.Info("Supplied by " + StationManager.StationString(station));
+		  AILog.Info("Supplied by " + StationInfo.ToString(station));
 		}
 	}
 	
@@ -112,7 +112,7 @@ function StationManager::StationsWithSupply(station_type, cargo)
 
 
 /* Returns list of stations which supply the specified cargo */
-function StationManager::StationsWithDemand(station_type, cargo)
+function StationInfo::StationsWithDemand(station_type, cargo)
 {
 	AILog.Info("StationsWithDemand for cargo " + AICargo.GetCargoLabel(cargo)); 
 	
@@ -122,7 +122,7 @@ function StationManager::StationsWithDemand(station_type, cargo)
 	
 	foreach( station, _ in foundstations)
 	{		
-		AILog.Info("  Accepted by " + StationManager.StationString(station)) 
+		AILog.Info("  Accepted by " + StationInfo.ToString(station)) 
 	}
 	
 	if(foundstations.Count() == 0)
@@ -135,8 +135,14 @@ function StationManager::StationsWithDemand(station_type, cargo)
  
  
 
-function  StationManager::_IsVehicleTravellingToStation(vehicle, station)
+function  StationInfo::_IsVehicleTravellingToStation(vehicle, station)
 {
+	/*Return true if the vehicle is actively running towards the station*/
+	if(!AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
+	{
+		return false; 		
+	}
+	
 	local v_dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, AIOrder.ORDER_CURRENT))
 	
 	//AILog.Info("  Vehicle " + vehicle.tostring() + " -> " + v_dest_station)
@@ -150,7 +156,7 @@ function  StationManager::_IsVehicleTravellingToStation(vehicle, station)
 	return v_dest_station == station  		
 }
 
-function StationManager::StationForVehicle(vehicle)
+function StationInfo::StationForVehicle(vehicle)
 {
 	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_AT_STATION)
 		return null
@@ -160,12 +166,12 @@ function StationManager::StationForVehicle(vehicle)
 }
 
 
-function StationManager::VehiclesToStationString(station, vehiclelist)
+function StationInfo::VehiclesToStationString(station, vehiclelist)
 {	
 	if(vehiclelist.Count() == 0)
 		return ""
 	
-	local output = "Vehicles travelling to " + StationManager.StationString(station) + ": "
+	local output = "    Vehicles enroute to " + StationInfo.ToString(station) + ": "
 	foreach(vehicle, enroute in vehiclelist)
 	{
 		output += " #" + vehicle.tostring()
@@ -174,9 +180,9 @@ function StationManager::VehiclesToStationString(station, vehiclelist)
 	return output
 }
 
-function StationManager::PrintVehiclesToStationString(station, vehiclelist)
+function StationInfo::PrintVehiclesToStationString(station, vehiclelist)
 {	
-	local output = StationManager.VehiclesToStationString(station, vehiclelist)
+	local output = StationInfo.VehiclesToStationString(station, vehiclelist)
 	if(output == null)
 		return
 		
@@ -187,18 +193,18 @@ function StationManager::PrintVehiclesToStationString(station, vehiclelist)
 }
 
 
-function StationManager::VehiclesEnrouteToStation(station, cargotype)
+function StationInfo::VehiclesEnrouteToStation(station, cargotype)
 {
 	/* Returns a list of vehicles travelling to the station to service the specified cargo.
 	   cargotype: Set to null returns all vehicles.  Setting a specific cargotype returns all vehicles with capacity for that cargo.
 	   */
 	
-	//AILog.Info("List vehicles travelling to " + StationManager.StationString(station)) 
+	//AILog.Info("List vehicles travelling to " + StationInfo.ToString(station)) 
 	local VehiclesToStation = AIVehicleList()
-	VehiclesToStation.Valuate(StationManager._IsVehicleTravellingToStation, station)	
+	VehiclesToStation.Valuate(StationInfo._IsVehicleTravellingToStation, station)	
 	VehiclesToStation.KeepValue(1)
 	
-	//StationManager.PrintVehiclesToStationString(station, VehiclesToStation)
+	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)
 	
 	if(cargotype != null)
 	{
@@ -206,24 +212,24 @@ function StationManager::VehiclesEnrouteToStation(station, cargotype)
 		VehiclesToStation.KeepAboveValue(1)
 	}
 	
-	//StationManager.PrintVehiclesToStationString(station, VehiclesToStation)
+	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)
 	 
 	return VehiclesToStation
 }
 
-function StationManager::NumVehiclesEnrouteToStation(station, cargotype)
+function StationInfo::NumVehiclesEnrouteToStation(station, cargotype)
 {
 	/* Returns a simple count of the number of vehicles travelling to the station */
-	local vehiclelist = StationManager.VehiclesEnrouteToStation(station, cargotype)
+	local vehiclelist = StationInfo.VehiclesEnrouteToStation(station, cargotype)
 	return vehiclelist.Count()
 }
 
-function StationManager::GetReservedCargoCount(station, cargotype)
+function StationInfo::GetReservedCargoCount(station, cargotype)
 {
 	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles already scheduled to visit*/
-	local scheduledvehicles = StationManager.VehiclesEnrouteToStation(station, cargotype)
+	local scheduledvehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
 	
-	StationManager.PrintVehiclesToStationString(station, scheduledvehicles)
+	StationInfo.PrintVehiclesToStationString(station, scheduledvehicles)
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
 	scheduledvehicles.Valuate(AIVehicle.GetCapacity, cargotype)

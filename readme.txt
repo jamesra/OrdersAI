@@ -70,4 +70,14 @@ Initial release
 
 Fixed readme formatting
 Fixed SuperLib version dependency typo to 37 from 27
+
+3
+_
+
+Typo fix that was causing a problem at load.
+Various fixes, vehicles are not counted as being enroute to a station unless they are moving. 
+Fixes for order list management, still work to be done here to eliminate accidental duplicates.
+
+  
+
  
