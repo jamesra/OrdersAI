@@ -92,10 +92,21 @@ function Scheduler::NeedsRouteUpdate(vehicle)
 	if(VehicleOrderCount == 0)
 		return true; 
 		
-	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_AT_STATION && VehicleOrderCount <= Scheduler.OrderHistoryLength)
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_AT_STATION && (AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)+1) == VehicleOrderCount)
+	{  
 		return true; 
+	}
 	
-	if(!AIOrder.IsValidVehicleOrder(vehicle, 0))
+	/*Check if we are empty and not heading to load*/
+	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
+	if(AIVehicle.GetCargoLoad(vehicle, cargotype) == 0  && AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
+	{
+		AILog.Info("Order Check " + AIOrder.GetOrderFlags(vehicle, AIOrder.ORDER_CURRENT).tostring() + " " + (AIOrder.GetOrderFlags(vehicle, AIOrder.ORDER_CURRENT) & AIOrder.OF_FULL_LOAD))
+		if((AIOrder.GetOrderFlags(vehicle, AIOrder.ORDER_CURRENT) & AIOrder.OF_FULL_LOAD) == 0)
+			return true
+	}
+	
+	if(!AIOrder.IsValidVehicleOrder(vehicle, AIOrder.ORDER_CURRENT))
 		return true; 
 		
 	return false;
@@ -274,17 +285,22 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 	return stationlist
 }
 
+function Scheduler::VehicleString(vehicle)
+{
+	return "Vehicle #" + vehicle.tostring() + " " + AIVehicle.GetName(vehicle);	
+}
+
 /* Add orders to a vehicle to pickup cargo at a station*/
 function Scheduler::RouteToNextPickup(vehicle)
 {
 	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
 	
-	AILog.Info("RouteToPickup vehicle #" + vehicle.tostring() + " cargo " + AICargo.GetCargoLabel(cargotype)) 
+	AILog.Info("RouteToPickup " + Scheduler.VehicleString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype)) 
 	local stockpilestations = StationManager.StationsWithStockpile(Scheduler.GetVehicleStationType(vehicle), cargotype);
 	
 	if(stockpilestations.Count() == 0)
 	{
-	    AILog.Warning("Vehicle #" + vehicle.tostring() + " has nowhere to go!");
+	    AILog.Warning(Scheduler.VehicleString(vehicle) + " has nowhere to go!");
 	    return	
 	}
 	else
@@ -374,6 +390,9 @@ function Scheduler::DispatchToStation(vehicle, station, flags)
 	AILog.Info("Dispatching vehicle #" + vehicle.tostring() + " to " + StationManager.StationString(station));
 	
 	AIOrder.AppendOrder(vehicle, AIStation.GetLocation(station), flags);
+	
+	//Make sure  the order we added is used next
+	AIOrder.SkipToOrder(vehicle, AIOrder.GetOrderCount(vehicle));
 }
 
 function Scheduler::ClearVehicleOrders(vehicle)
