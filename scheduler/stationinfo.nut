@@ -124,6 +124,15 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 	if(Scheduler.CargoProducedAtTowns(cargo))
 	{
 		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
+		
+	
+		foreach(station,_ in StationInfo.StationsWithStockpile(station_type, cargo))
+		{
+			if(!foundstations.HasItem(station)){
+				foundstations.AddItem(station,1);
+				AILog.Warning("Station not found with normal methods, but has a stockpile to pickup " + StationInfo.ToString(station))
+			}
+		}
 	}
 	else
 	{
@@ -131,16 +140,7 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 		foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
 		foundstations.KeepValue(1)
 	}
-	
-	foreach(station,_ in StationInfo.StationsWithStockpile(station_type, cargo))
-	{
-		if(!foundstations.HasItem(station)){
-			foundstations.AddItem(station,1);
-			AILog.Warning("Station not found with normal methods, but has a stockpile to pickup " + StationInfo.ToString(station))
-		}
-	}
-	
-	
+		
 	foreach( station, _ in foundstations)
 	{		 
 		AILog.Info("  Supplied by " + StationInfo.ToString(station)); 
@@ -160,13 +160,13 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 function StationInfo::StationsWithDemand(station_type, cargo)
 {
 	AILog.Info("StationsWithDemand for cargo " + AICargo.GetCargoLabel(cargo)); 
-	
-	local foundstations 
-	/*local foundstations = AIStationList(station_type)
+	 
+	local foundstations = AIStationList(station_type)
 	foundstations.Valuate(StationInfo.IsCargoAccepted, cargo)
 	foundstations.KeepValue(1)
-	*/
 	
+	/*
+	local foundstations
 	//Workaround for SLStation.IsCargoSupplied not returning stations that supply passengers/mail in base game
 	if(Scheduler.CargoProducedAtTowns(cargo))
 	{
@@ -178,6 +178,7 @@ function StationInfo::StationsWithDemand(station_type, cargo)
 		foundstations.Valuate(SLStation.IsCargoAccepted, cargo)
 		foundstations.KeepValue(1)
 	}
+	*/
 	
 	foreach( station, _ in foundstations)
 	{		
@@ -186,8 +187,7 @@ function StationInfo::StationsWithDemand(station_type, cargo)
 	
 	if(foundstations.Count() == 0)
 	{
-		
-			AILog.Info("  No stations demand cargo " + AICargo.GetCargoLabel(cargo) + "!");
+		AILog.Info("  No stations demand cargo " + AICargo.GetCargoLabel(cargo) + "!");
 	}
 	
 	
@@ -200,12 +200,14 @@ function StationInfo::IsCargoAccepted(station, cargo)
 	local AcceptedCargos = AICargoList_StationAccepting(station)
 	local IsAccepted = AcceptedCargos.HasItem(cargo)
 	
+	/*
 	if(IsAccepted) {
 		AILog.Info(StationInfo.ToString(station) + " accepts " + AICargo.GetCargoLabel(cargo))
 	}
 	else {
 		AILog.Info(StationInfo.ToString(station) + " does not accept " + AICargo.GetCargoLabel(cargo))
 	}
+	*/
 	
 	return IsAccepted
 }

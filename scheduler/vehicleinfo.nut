@@ -102,7 +102,8 @@ function VehicleInfo::CanLoadAtDestination(vehicle)
 	local cargo = SLVehicle.GetVehicleCargoType(vehicle)
 	local CanLoad = SLStation.IsCargoSupplied(DestinationStation, cargo)
 	if(!CanLoad && Scheduler.CargoProducedAtTowns(cargo)) {
-		 CanLoad = AIStation.IsWithinTownInfluence(DestinationStation, AIStation.GetNearestTown(DestinationStation))
+		CanLoad = StationInfo.IsCargoAccepted(DestinationStation, cargo)
+		//CanLoad = AIStation.IsWithinTownInfluence(DestinationStation, AIStation.GetNearestTown(DestinationStation))
 	}
 	
 	//AILog.Info(VehicleInfo.ToString(vehicle) + " can load at destination " + StationInfo.ToString(DestinationStation) + " = " + CanLoad.tostring())
@@ -118,6 +119,10 @@ function VehicleInfo::CanUnloadAtDestination(vehicle)
 	if(!CanUnload && Scheduler.CargoProducedAtTowns(cargo))
 	{
 		CanUnload = AIStation.IsWithinTownInfluence(DestinationStation, AIStation.GetNearestTown(DestinationStation))
+		if(CanUnload)
+		{
+			AILog.Warning(VehicleInfo.ToString(vehicle) + " can unload at destination " + StationInfo.ToString(DestinationStation) + " but StationInfo.IsCargoAccepted returned false!!!")			
+		}
 	}
 	
 	//AILog.Info(VehicleInfo.ToString(vehicle) + " can unload at destination " + StationInfo.ToString(DestinationStation) + " = " + CanUnload.tostring())

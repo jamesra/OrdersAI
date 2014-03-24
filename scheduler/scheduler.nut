@@ -39,7 +39,9 @@ class Scheduler
 	
 	static function GetVehicleStationType(vehicle); 
 	
-	static function RouteToNextPickup(vehicle);
+	static function RouteToTownPickup(vehicle);
+	
+	static function RouteToCargoPickup(vehicle);
 	
 	static function DispatchToStation(vehicle, station, flags);
 	
@@ -100,7 +102,7 @@ function Scheduler::CheckOrders(vehicle)
 		{
 			//AILog.Info("Vehicle " + vehicle.tostring() + " cargo is symettric")
 			//If vehicle cargo is both produced and accepted by the same stations we use the pickup routing because the delivery is also a pickup
-			Scheduler.RouteToNextPickup(vehicle);
+			Scheduler.RouteToTownPickup(vehicle);
 		}
 		else
 		{
@@ -113,7 +115,7 @@ function Scheduler::CheckOrders(vehicle)
 			else
 			{
 				/*Just because we do not have cargo to deliver does not mean we need to make a pickup*/
-				Scheduler.RouteToNextPickup(vehicle);
+				Scheduler.RouteToCargoPickup(vehicle);
 			}
 			
 		}
@@ -178,20 +180,29 @@ function Scheduler::NeedsRouteUpdate(vehicle)
 		AILog.Info(VehicleInfo.ToString(vehicle) + " last order completed");
 		return true;
 	}
-			
-	/*Check if we are empty and not heading to load*/
+	
 	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
 	{
-			
-		if(VehicleInfo.IsEmpty(vehicle) && !VehicleInfo.CanLoadAtDestination(vehicle)){
-			AILog.Info(VehicleInfo.ToString(vehicle) + " needs to load cargo");
-			return true;
+		/*Check if we are empty and not heading to load*/
+		if(Scheduler.CargoProducedAtTowns(SLVehicle.GetVehicleCargoType(vehicle)))
+		{
+			if(!VehicleInfo.CanUnloadAtDestination(vehicle))
+				return true			
 		}
-		if(VehicleInfo.HasCargo(vehicle) && !VehicleInfo.CanUnloadAtDestination(vehicle)){
-			AILog.Info(VehicleInfo.ToString(vehicle) + " needs to unload cargo");
-			return true;
-		}
+		else
+		{
+			if(VehicleInfo.IsEmpty(vehicle) && !VehicleInfo.CanLoadAtDestination(vehicle)){
+				AILog.Info(VehicleInfo.ToString(vehicle) + " needs to load cargo");
+				return true;
+			}
+			if(VehicleInfo.HasCargo(vehicle) && !VehicleInfo.CanUnloadAtDestination(vehicle)){
+				AILog.Info(VehicleInfo.ToString(vehicle) + " needs to unload cargo");
+				return true;
+			}
+		}	
 	}
+			
+	
 	
 	return false;
 }
@@ -309,13 +320,54 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 	return stationlist
 }
 
+
+/* I saw strange behaviour from SuperLib and NoAI API's with regards to correctly indicating if a station supplied passengers
+   created dedicated function to hold the magic workarounds */
+function Scheduler::RouteToTownPickup(vehicle)
+{
+	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
+	
+	AILog.Info("RouteToTownPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype))
+	local stockpilestations = StationInfo.StationsWithDemand(VehicleInfo.GetVehicleStationType(vehicle),  cargotype)
+	
+	if(stockpilestations.Count() == 0)
+	{
+	    AILog.Warning(VehicleInfo.ToString(vehicle) + " has nowhere to go!");
+	    return	
+	}
+	else
+	{
+		/*Send the vehicle to the first station*/ 
+		//Scheduler.ClearVehicleOrders(vehicle);
+		
+		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
+		
+		foreach( station, _ in orderedStations)
+		{
+			//AILog.Info("Trying station #" + station.tostring())
+			//AILog.Info("Current station #" + AIStation.GetStationID(AIVehicle.GetLocation(vehicle)).tostring())
+			if(station == AIStation.GetStationID(AIVehicle.GetLocation(vehicle)))
+			{
+				//AILog.Info("Ignoring current station #" + station.tostring())
+				continue; 
+			}
+			else
+			{
+				
+				Scheduler.DispatchToStation(vehicle, station, AIOrder.OF_FULL_LOAD_ANY);
+				break; 
+			} 
+		}
+	}	
+}
+
 /* Add orders to a vehicle to pickup cargo at a station*/
-function Scheduler::RouteToNextPickup(vehicle)
+function Scheduler::RouteToCargoPickup(vehicle)
 {
 	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
 	
 	
-	AILog.Info("RouteToPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype)) 
+	AILog.Info("RouteToCargoPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype)) 
 	local stockpilestations = StationInfo.StationsWithSupply(VehicleInfo.GetVehicleStationType(vehicle), cargotype);
 	
 	if(stockpilestations.Count() == 0)
