@@ -7,14 +7,19 @@ Orders Assistant AI
 What it does
 ------------
 
-Orders assistant does the best it can to route vehicles for the player.  Each
-time a vehicle loads or delivers cargo OrdersAI does its best to estimate
+Orders assistant does the best it can to route vehicles for the player or an AI.
+Each time a vehicle loads or delivers cargo OrdersAI does its best to estimate
 which station should be visited next based on the station ratings, stockpiled
 cargo, number of other vehicles enroute, and hopefully other factors in the
 future.
 
 Orders assistant still allows manual control of vehicles which exist in
 groups.  Users can decide how many vehicles the Orders AI should be routing.
+
+My vision for orders AI is to be a library for other AI's that don't want to 
+bother with routing and players who want to eliminate the more mundane routing
+chores while retaining control over specific routes.
+
 	
 Getting Started
 ---------------
@@ -75,8 +80,12 @@ Fixed SuperLib version dependency typo to 37 from 27
 _
 
 Typo fix that was causing a problem at load.
-Various fixes, vehicles are not counted as being enroute to a station unless they are moving. 
-Fixes for order list management, still work to be done here to eliminate accidental duplicates.
+Fixed crash when vehicle was sold
+Vehicles travel to stations even if they have not been visited before.  (In some cases passenger stations must still be visited manually.  Probably a deeper bug than the AI)
+Vehicles are not counted as being enroute to a station unless they are moving.
+Vehciles loading at a station have their already loaded cargo subtracted from their reservation. 
+Many fixes for order list management.  Duplicates should be eliminated.
+
 
   
 

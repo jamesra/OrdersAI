@@ -17,7 +17,7 @@
  * Copyright 2014 James Anderson
  */
  
-import("util.superlib", "SuperLib", 37);
+import("util.superlib", "SuperLib", 38);
 
 
 require("stationinfo.nut")
@@ -26,6 +26,8 @@ require("vehicleinfo.nut")
 SLStation <- SuperLib.Station; 
 SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
+
+//Tile <- SuperLib.Tile
 
 
 class Scheduler
@@ -46,23 +48,35 @@ class Scheduler
 };
 
 
-/* Check a vehicles orders to make sure they are valid */
-function Scheduler::CheckOrders(vehicle)
+function Scheduler::CanVehicleBeScheduled(vehicle)
 {
-	
 	if(Scheduler.VehicleIsUserManaged(vehicle)) {
-		return;
+		return false;
 	}
 	
 	if(SLVehicle.GetVehicleCargoType(vehicle) == null){
 		AILog.Info(Vehicle.ToString(vehicle) + " has no valid cargo type. Skipping")
-		return;
+		return false;
 	}
 	
 	//Don't mess with vehicles in depot.  This allows players the chance to move them into a group and issue orders manually
 	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_IN_DEPOT) {
-		return;
+		return false;
 	}
+	
+	if(AIVehicle.IsValidVehicle(vehicle)) {
+		return false;
+	}
+	
+	return true; 
+}
+
+/* Check a vehicles orders to make sure they are valid */
+function Scheduler::CheckOrders(vehicle)
+{
+	if(!Scheduler.CanVehicleBeScheduled(vehicle)) {
+		return
+	}	
 	   
 	if(Scheduler.NeedsOrderScrub(vehicle))
 	{
@@ -116,6 +130,22 @@ function Scheduler::CheckOrders(vehicle)
 	
 	//AILog.Info(AIVehicle.GetState(vehicle).tostring())	
 }
+
+
+function Scheduler::CargoProducedAtTowns(cargotype)
+{
+	/*returns true if the stations supply and accept the same cargo, for example passengers and mail. 
+	  When this is true we always route to pickups and do not use delivery routing
+	  */
+	if(SLHelper.GetPAXCargo() == cargotype)
+		return true
+		
+	if(SLHelper.GetMailCargo() == cargotype)
+		return true
+	
+	return false;
+}
+
 
 function Scheduler::CargoProducedAndAcceptedAtSameStation(cargotype)
 {
@@ -227,14 +257,15 @@ function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
 	 of the vehicle we can fill */
 	 //AILog.Info("GetSupplyWeight " + StationInfo.ToString(station))
 	 
-	 local reservedcargo = StationInfo.GetReservedCargoCount(station, cargotype)	 
+	 local reservedcargo = StationInfo.GetEnrouteReservedCargoCount(station, cargotype) + StationInfo.GetLoadingReservedCargoCount(station, cargotype)
 	 local waitingcargo = AIStation.GetCargoWaiting(station, cargotype)
 	 local vehiclecapacity = AIVehicle.GetCapacity(vehicle, cargotype)
 
 	 local unreservedcargo = waitingcargo - reservedcargo;
 	
-	 if(vehiclecapacity < unreservedcargo)
+	 if(vehiclecapacity < unreservedcargo) {
 	 	return 1.0;
+	 }
 	 else
 	 {
 	 	if(Scheduler.StationUnvisited(station, cargotype)) {

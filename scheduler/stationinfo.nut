@@ -40,6 +40,10 @@ class StationInfo
     static function NumVehiclesEnrouteToStation(station, cargotype);
 	
 	static function GetReservedCargoCount(station, cargotype);
+	
+	static function GetLoadingReservedCargoCount(station, cargotype);
+	
+	static function GetEnrouteReservedCargoCount(station, cargotype);
 };
 
 
@@ -87,15 +91,55 @@ function StationInfo::StationsWithStockpile(station_type, cargo)
 	return stations
 }
 
+
+function StationInfo::StationsWithTowns(station_type, cargo)
+{
+	local stations = AIStationList(station_type)
+	stations.Valuate(AIStation.GetNearestTown)
+	
+	local townstations = AIList()
+	
+	foreach(station, town in stations)
+	{
+		if(AIStation.IsWithinTownInfluence(station, town))
+		{
+			townstations.AddItem(station,1);
+			AILog.Info(StationInfo.ToString(station) + " has a town");
+		}
+	}
+	
+	return townstations
+}
+
+
 /* Returns list of stations which supply the specified cargo */
 function StationInfo::StationsWithSupply(station_type, cargo)
 {
 	AILog.Info("StationsWithSupply of cargo " + AICargo.GetCargoLabel(cargo)); 
 	
-	local foundstations = AIStationList(station_type)
+	local foundstations = null
 	
-	foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
-	foundstations.KeepValue(1)
+	
+	//Workaround for SLStation.IsCargoSupplied not returning stations that supply passengers/mail in base game
+	if(Scheduler.CargoProducedAtTowns(cargo))
+	{
+		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
+	}
+	else
+	{
+		foundstations = AIStationList(station_type)
+		foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
+		foundstations.KeepValue(1)
+	}
+	
+	foreach(station,_ in StationInfo.StationsWithStockpile(station_type, cargo))
+	{
+		if(!foundstations.HasItem(station)){
+			foundstations.AddItem(station,1);
+			AILog.Warning("Station not found with normal methods, but has a stockpile to pickup " + StationInfo.ToString(station))
+		}
+	}
+	
 	
 	foreach( station, _ in foundstations)
 	{		 
@@ -104,6 +148,7 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 	
 	if(foundstations.Count() == 0)
 	{
+		
 		AILog.Info("No stations supply desired cargo " + AICargo.GetCargoLabel(cargo));
 	}
 	
@@ -116,9 +161,23 @@ function StationInfo::StationsWithDemand(station_type, cargo)
 {
 	AILog.Info("StationsWithDemand for cargo " + AICargo.GetCargoLabel(cargo)); 
 	
-	local foundstations = AIStationList(station_type)
-	foundstations.Valuate(SLStation.IsCargoAccepted, cargo)
+	local foundstations 
+	/*local foundstations = AIStationList(station_type)
+	foundstations.Valuate(StationInfo.IsCargoAccepted, cargo)
 	foundstations.KeepValue(1)
+	*/
+	
+	//Workaround for SLStation.IsCargoSupplied not returning stations that supply passengers/mail in base game
+	if(Scheduler.CargoProducedAtTowns(cargo))
+	{
+		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
+	}
+	else
+	{
+		foundstations = AIStationList(station_type)
+		foundstations.Valuate(SLStation.IsCargoAccepted, cargo)
+		foundstations.KeepValue(1)
+	}
 	
 	foreach( station, _ in foundstations)
 	{		
@@ -127,27 +186,44 @@ function StationInfo::StationsWithDemand(station_type, cargo)
 	
 	if(foundstations.Count() == 0)
 	{
-		AILog.Info("  No stations demand cargo " + AICargo.GetCargoLabel(cargo) + "!");
+		
+			AILog.Info("  No stations demand cargo " + AICargo.GetCargoLabel(cargo) + "!");
 	}
+	
 	
 	return foundstations;
 }
- 
+
+
+function StationInfo::IsCargoAccepted(station, cargo)
+{
+	local AcceptedCargos = AICargoList_StationAccepting(station)
+	local IsAccepted = AcceptedCargos.HasItem(cargo)
+	
+	if(IsAccepted) {
+		AILog.Info(StationInfo.ToString(station) + " accepts " + AICargo.GetCargoLabel(cargo))
+	}
+	else {
+		AILog.Info(StationInfo.ToString(station) + " does not accept " + AICargo.GetCargoLabel(cargo))
+	}
+	
+	return IsAccepted
+}
  
 
 function  StationInfo::_IsVehicleTravellingToStation(vehicle, station)
 {
 	/*Return true if the vehicle is actively running towards the station*/
-	if(!AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
+	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_RUNNING)
 	{
-		return false; 		
+		return false;
 	}
 	
-	local v_dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, AIOrder.ORDER_CURRENT))
+	local v_dest_station = VehicleInfo.Destination(vehicle)
 	
 	//AILog.Info("  Vehicle " + vehicle.tostring() + " -> " + v_dest_station)
 	
-	if(v_dest_station == null)
+	if(v_dest_station != station)
 		return false
 	
 	//local enroute = 
@@ -168,11 +244,12 @@ function StationInfo::StationForVehicle(vehicle)
 
 function StationInfo::VehiclesToStationString(station, vehiclelist)
 {	
-	if(vehiclelist.Count() == 0)
-		return ""
+	local output = "   " + StationInfo.ToString(station) + ": "
 	
-	local output = "    Vehicles enroute to " + StationInfo.ToString(station) + ": "
-	foreach(vehicle, enroute in vehiclelist)
+	if(vehiclelist == null || vehiclelist.Count() == 0)
+		return output
+		
+	foreach(vehicle, _ in vehiclelist)
 	{
 		output += " #" + vehicle.tostring()
 	}
@@ -182,12 +259,14 @@ function StationInfo::VehiclesToStationString(station, vehiclelist)
 
 function StationInfo::PrintVehiclesToStationString(station, vehiclelist)
 {	
-	local output = StationInfo.VehiclesToStationString(station, vehiclelist)
-	if(output == null)
+	local output = StationInfo.VehiclesToStationString(station, vehiclelist);
+	if(output == null) {
 		return
+	}
 		
-	if(output == "")
+	if(output == ""){
 		return
+	}
 	
 	AILog.Info(output)
 }
@@ -201,17 +280,16 @@ function StationInfo::VehiclesEnrouteToStation(station, cargotype)
 	
 	//AILog.Info("List vehicles travelling to " + StationInfo.ToString(station)) 
 	local VehiclesToStation = AIVehicleList()
-	VehiclesToStation.Valuate(StationInfo._IsVehicleTravellingToStation, station)	
-	VehiclesToStation.KeepValue(1)
-	
-	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)
-	
 	if(cargotype != null)
 	{
 		VehiclesToStation.Valuate(AIVehicle.GetCapacity, cargotype)
 		VehiclesToStation.KeepAboveValue(1)
 	}
 	
+	VehiclesToStation.Valuate(StationInfo._IsVehicleTravellingToStation, station)	
+	VehiclesToStation.KeepValue(1)
+	
+	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)	
 	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)
 	 
 	return VehiclesToStation
@@ -224,18 +302,50 @@ function StationInfo::NumVehiclesEnrouteToStation(station, cargotype)
 	return vehiclelist.Count()
 }
 
-function StationInfo::GetReservedCargoCount(station, cargotype)
+
+function StationInfo::GetLoadingReservedCargoCount(station, cargotype)
 {
-	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles already scheduled to visit*/
-	local scheduledvehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
+	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles already scheduled to visit, or already visiting and loading*/
+	local parkedvehicles = SLStation.GetListOfVehiclesAtStation(station)
 	
-	StationInfo.PrintVehiclesToStationString(station, scheduledvehicles)
+	parkedvehicles.Valuate(AIVehicle.GetState)
+	parkedvehicles.KeepValue(AIVehicle.VS_AT_STATION)
+	
+	if(parkedvehicles.Count() > 0) {
+		AILog.Info("Vehicles loading at " + StationInfo.VehiclesToStationString(station, parkedvehicles))
+	}
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
-	scheduledvehicles.Valuate(AIVehicle.GetCapacity, cargotype)
+	parkedvehicles.Valuate(AIVehicle.GetCapacity, cargotype)
 	
 	local totalReservation = 0
-	foreach (v, capacity in scheduledvehicles) 
+	foreach (v, capacity in parkedvehicles) 
+	{
+		if(capacity > 0) { 
+			totalReservation += (capacity - AIVehicle.GetCargoLoad(v, cargotype))
+		}
+	}
+	
+	return totalReservation
+}
+
+
+function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
+{
+	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles already scheduled to visit, or already visiting and loading*/
+	local enroutevehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
+	if(enroutevehicles == null)
+		AILog.Warning("Error, enroute vehicles is null")
+	
+	if(enroutevehicles.Count() > 0) {
+		AILog.Info("Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
+	}  
+	
+	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
+	enroutevehicles.Valuate(AIVehicle.GetCapacity, cargotype)
+	
+	local totalReservation = 0
+	foreach (v, capacity in enroutevehicles) 
 	{
 		totalReservation += capacity
 	}

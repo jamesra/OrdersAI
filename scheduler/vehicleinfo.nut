@@ -87,7 +87,10 @@ function VehicleInfo::HasCargo(vehicle)
 function VehicleInfo::Destination(vehicle)
 {
 	/*Returns the station the vehicle is travelling to*/
-	local dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, AIOrder.ORDER_CURRENT))
+	local order_index = AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)
+	//AILog.Info(VehicleInfo.ToString(vehicle) + " order index #" + order_index.tostring())
+	local dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, order_index))
+	//AILog.Info(VehicleInfo.ToString(vehicle) + " enroute to " + StationInfo.ToString(dest_station))
 	if(dest_station == null)
 		throw (AIError.GetLastErrorString())
 	return dest_station
@@ -95,16 +98,28 @@ function VehicleInfo::Destination(vehicle)
 
 function VehicleInfo::CanLoadAtDestination(vehicle)
 {
-	local DestinationStation = VehicleInfo.Destination(vehicle)		
-	local CanLoad = SLStation.IsCargoSupplied(DestinationStation, SLVehicle.GetVehicleCargoType(vehicle))
-	AILog.Info(VehicleInfo.ToString(vehicle) + " can load at destination " + StationInfo.ToString(DestinationStation) + " = " + CanLoad.tostring())
+	local DestinationStation = VehicleInfo.Destination(vehicle)	
+	local cargo = SLVehicle.GetVehicleCargoType(vehicle)
+	local CanLoad = SLStation.IsCargoSupplied(DestinationStation, cargo)
+	if(!CanLoad && Scheduler.CargoProducedAtTowns(cargo)) {
+		 CanLoad = AIStation.IsWithinTownInfluence(DestinationStation, AIStation.GetNearestTown(DestinationStation))
+	}
+	
+	//AILog.Info(VehicleInfo.ToString(vehicle) + " can load at destination " + StationInfo.ToString(DestinationStation) + " = " + CanLoad.tostring())
 	return CanLoad
 }
 
 function VehicleInfo::CanUnloadAtDestination(vehicle)
 {
+	local cargo = SLVehicle.GetVehicleCargoType(vehicle)
 	local DestinationStation = VehicleInfo.Destination(vehicle)		
-	local CanUnload = SLStation.IsCargoAccepted(DestinationStation, SLVehicle.GetVehicleCargoType(vehicle))
-	AILog.Info(VehicleInfo.ToString(vehicle) + " can unload at destination " + StationInfo.ToString(DestinationStation) + " = " + CanUnload.tostring())
+	local CanUnload = StationInfo.IsCargoAccepted(DestinationStation, cargo)
+	
+	if(!CanUnload && Scheduler.CargoProducedAtTowns(cargo))
+	{
+		CanUnload = AIStation.IsWithinTownInfluence(DestinationStation, AIStation.GetNearestTown(DestinationStation))
+	}
+	
+	//AILog.Info(VehicleInfo.ToString(vehicle) + " can unload at destination " + StationInfo.ToString(DestinationStation) + " = " + CanUnload.tostring())
 	return CanUnload
 }
