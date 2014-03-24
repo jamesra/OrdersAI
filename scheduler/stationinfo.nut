@@ -78,7 +78,7 @@ function StationInfo::StationsWithStockpile(station_type, cargo)
 	AILog.Info("StationsWithStockpile of cargo " + AICargo.GetCargoLabel(cargo)); 
 	
 	local stations = AIStationList(station_type);
-	stations.Valuate(AIStation.GetCargoWaiting, cargo); 
+	stations.Valuate(AIStation.GetCargoWaiting, cargo);
 	stations.KeepAboveValue(0);
 	stations.Sort(AIList.SORT_BY_VALUE, false);
 	
@@ -92,14 +92,14 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 {
 	AILog.Info("StationsWithSupply of cargo " + AICargo.GetCargoLabel(cargo)); 
 	
-	local foundstations = []
+	local foundstations = AIStationList(station_type)
 	
-	foreach( station, _ in AIStationList(station_type))
-	{		
-		if(SLStation.IsCargoSupplied(station, cargo))
-		{
-		  AILog.Info("Supplied by " + StationInfo.ToString(station));
-		}
+	foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
+	foundstations.KeepValue(1)
+	
+	foreach( station, _ in foundstations)
+	{		 
+		AILog.Info("  Supplied by " + StationInfo.ToString(station)); 
 	}
 	
 	if(foundstations.Count() == 0)

@@ -54,12 +54,16 @@ function Scheduler::CheckOrders(vehicle)
 		return;
 	}
 	
+	if(SLVehicle.GetVehicleCargoType(vehicle) == null){
+		AILog.Info(Vehicle.ToString(vehicle) + " has no valid cargo type. Skipping")
+		return;
+	}
+	
 	//Don't mess with vehicles in depot.  This allows players the chance to move them into a group and issue orders manually
 	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_IN_DEPOT) {
 		return;
 	}
- 
-	
+	   
 	if(Scheduler.NeedsOrderScrub(vehicle))
 	{
 		Scheduler.ScrubOrders(vehicle, Scheduler.OrderHistoryLength)
@@ -187,6 +191,18 @@ function Scheduler::VehicleIsUserManaged(vehicle)
 }
 
 
+function Scheduler::StationUnvisited(station, cargo)
+{
+	if(AIStation.HasCargoRating(station, cargo)){
+		return false
+	}
+	
+	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
+		return false
+	}
+	
+	return true
+}
 
 /* Returns a scalar from 0.0 to 1.0. Lower ratings return a higher scalar */
 function Scheduler::GetRatingWeight(station, cargo)
@@ -220,7 +236,14 @@ function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
 	 if(vehiclecapacity < unreservedcargo)
 	 	return 1.0;
 	 else
-	 	return unreservedcargo.tofloat() / vehiclecapacity.tofloat()
+	 {
+	 	if(Scheduler.StationUnvisited(station, cargotype)) {
+	 		return 1.0
+	 	}
+	 	else {
+	 		return unreservedcargo.tofloat() / vehiclecapacity.tofloat()
+	 	}
+	 }
 }
 
 function StationPickupAttractiveness(station, vehicle, cargotype)
@@ -260,8 +283,9 @@ function Scheduler::RouteToNextPickup(vehicle)
 {
 	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
 	
+	
 	AILog.Info("RouteToPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype)) 
-	local stockpilestations = StationInfo.StationsWithStockpile(VehicleInfo.GetVehicleStationType(vehicle), cargotype);
+	local stockpilestations = StationInfo.StationsWithSupply(VehicleInfo.GetVehicleStationType(vehicle), cargotype);
 	
 	if(stockpilestations.Count() == 0)
 	{
@@ -296,7 +320,7 @@ function Scheduler::RouteToNextPickup(vehicle)
 
 /* Add orders to a vehicle to deliver a cargo at a station */
 function Scheduler::RouteToDelivery(vehicle)
-{``
+{
 	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
 	
 	AILog.Info("RouteToDelivery vehicle #" + vehicle.tostring() + " cargo " + AICargo.GetCargoLabel(cargotype)) 
@@ -371,8 +395,13 @@ function Scheduler::DispatchToStation(vehicle, station, flags)
 	
 	AIOrder.AppendOrder(vehicle, AIStation.GetLocation(station), flags);
 	
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING) {
+		AIOrder.SkipToOrder(vehicle, AIOrder.GetOrderCount(vehicle)-1);
+	}
+	
 	//Make sure  the order we added is used next
-	AIOrder.SkipToOrder(vehicle, AIOrder.GetOrderCount(vehicle));
+	
+	
 }
 
 function Scheduler::ClearVehicleOrders(vehicle)

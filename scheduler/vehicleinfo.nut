@@ -87,14 +87,17 @@ function VehicleInfo::HasCargo(vehicle)
 function VehicleInfo::Destination(vehicle)
 {
 	/*Returns the station the vehicle is travelling to*/
-	return AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, AIOrder.ORDER_CURRENT))
+	local dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, AIOrder.ORDER_CURRENT))
+	if(dest_station == null)
+		throw (AIError.GetLastErrorString())
+	return dest_station
 }
 
 function VehicleInfo::CanLoadAtDestination(vehicle)
 {
 	local DestinationStation = VehicleInfo.Destination(vehicle)		
 	local CanLoad = SLStation.IsCargoSupplied(DestinationStation, SLVehicle.GetVehicleCargoType(vehicle))
-	//AILog.Info(VehicleInfo.ToString(vehicle) + " can load at destination = " + CanLoad.tostring())
+	AILog.Info(VehicleInfo.ToString(vehicle) + " can load at destination " + StationInfo.ToString(DestinationStation) + " = " + CanLoad.tostring())
 	return CanLoad
 }
 
@@ -102,6 +105,6 @@ function VehicleInfo::CanUnloadAtDestination(vehicle)
 {
 	local DestinationStation = VehicleInfo.Destination(vehicle)		
 	local CanUnload = SLStation.IsCargoAccepted(DestinationStation, SLVehicle.GetVehicleCargoType(vehicle))
-	//AILog.Info(VehicleInfo.ToString(vehicle) + " can load at destination = " + CanLoad.tostring())
+	AILog.Info(VehicleInfo.ToString(vehicle) + " can unload at destination " + StationInfo.ToString(DestinationStation) + " = " + CanUnload.tostring())
 	return CanUnload
 }
