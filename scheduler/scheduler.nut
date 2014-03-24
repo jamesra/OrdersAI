@@ -64,7 +64,7 @@ function Scheduler::CanVehicleBeScheduled(vehicle)
 		return false;
 	}
 	
-	if(AIVehicle.IsValidVehicle(vehicle)) {
+	if(!AIVehicle.IsValidVehicle(vehicle)) {
 		return false;
 	}
 	
