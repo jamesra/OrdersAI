@@ -22,7 +22,7 @@ class OrdersAI extends AIInfo {
 	function GetName()          { return "Orders Assistant AI"; }
 	function GetShortName()     { return "OrdA"; }
 	function GetDescription()   { return "An AI assistant which manages vehicle schedules to reduce the micromanagement burden.  Great if you want to focus on network optimization or have small kids who want to play.  This AI is intended to play on the same company as the player.  Thus at the beginning of the game the player should use CTRL+ALT+C to activate cheat mode and switch to the AI's company.  See the readme.rst for more detail."; }
-	function GetVersion()       { return 4; }
+	function GetVersion()       { return 5; }
 	function MinVersionToLoad() { return 1; }
 	function GetDate()          { return "2014-03-20"; }
 	function CreateInstance()   { return "OrdersAI"; }

@@ -126,19 +126,22 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
 		
 	
-		foreach(station,_ in StationInfo.StationsWithStockpile(station_type, cargo))
-		{
-			if(!foundstations.HasItem(station)){
-				foundstations.AddItem(station,1);
-				AILog.Warning("Station not found with normal methods, but has a stockpile to pickup " + StationInfo.ToString(station))
-			}
-		}
+		
 	}
 	else
 	{
 		foundstations = AIStationList(station_type)
 		foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
 		foundstations.KeepValue(1)
+	}
+	
+	/* Check for stations that may have transfer cargo */
+	foreach(station,_ in StationInfo.StationsWithStockpile(station_type, cargo))
+	{
+		if(!foundstations.HasItem(station)){
+			foundstations.AddItem(station,1);
+			//AILog.Warning("Station not found with normal methods, but has a stockpile to pickup " + StationInfo.ToString(station))
+		}
 	}
 		
 	foreach( station, _ in foundstations)
