@@ -8,6 +8,8 @@ class VehicleInfo
 	
 	static function GetVehicleStationType(vehicle);
 	
+	static function GetAircraftType(vehicle);
+	
 	static function NoValidOrders(vehicle);
 	
 	static function LastOrderIsCompleted(vehicle);
@@ -29,11 +31,22 @@ function VehicleInfo::ToString(vehicle)
 	return "Vehicle #" + vehicle.tostring() + " " + AIVehicle.GetName(vehicle);	
 }
 
+
 /* Returns the station type for the vehicle */
 function VehicleInfo::GetVehicleStationType(vehicle)
 { 
 	return SLStation.GetStationTypeOfVehicle(vehicle)
 }
+
+
+function VehicleInfo::GetAircraftType(vehicle)
+{
+	if(AIVehicle.GetVehicleType(vehicle) != VT_AIR)
+		return AIAirport.PT_INVALID
+		
+	return AIEngine.GetPlaneType(AIVehicle.GetEngineType(vehicle))
+}
+
 
 function VehicleInfo::IsLoading(vehicle)
 {
@@ -47,6 +60,7 @@ function VehicleInfo::IsLoading(vehicle)
 	
 	return SLStation.IsCargoSupplied(vehicleStation, cargotype)
 }
+
 
 
 function VehicleInfo::NoValidOrders(vehicle)

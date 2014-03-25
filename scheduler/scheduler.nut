@@ -32,16 +32,23 @@ SLVehicle <- SuperLib.Vehicle;
 
 class Scheduler
 {
-	static LastStationForVehicle = {}
 	static OrderHistoryLength = 3
 	
+	static function VehicleIsUserManaged(vehicle);
+	
 	static function CheckOrders(vehicle);
+	
+	static function CargoProducedAtTowns(cargotype);
+	
+	static function CargoProducedAndAcceptedAtSameStation(cargotype);
 	
 	static function GetVehicleStationType(vehicle); 
 	
 	static function RouteToTownPickup(vehicle);
 	
 	static function RouteToCargoPickup(vehicle);
+	
+	static function StationUnvisited(station, cargo);
 	
 	static function DispatchToStation(vehicle, station, flags);
 	
@@ -50,28 +57,7 @@ class Scheduler
 };
 
 
-function Scheduler::CanVehicleBeScheduled(vehicle)
-{
-	if(Scheduler.VehicleIsUserManaged(vehicle)) {
-		return false;
-	}
-	
-	if(SLVehicle.GetVehicleCargoType(vehicle) == null){
-		AILog.Info(Vehicle.ToString(vehicle) + " has no valid cargo type. Skipping")
-		return false;
-	}
-	
-	//Don't mess with vehicles in depot.  This allows players the chance to move them into a group and issue orders manually
-	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_IN_DEPOT) {
-		return false;
-	}
-	
-	if(!AIVehicle.IsValidVehicle(vehicle)) {
-		return false;
-	}
-	
-	return true; 
-}
+
 
 /* Check a vehicles orders to make sure they are valid */
 function Scheduler::CheckOrders(vehicle)
@@ -131,6 +117,37 @@ function Scheduler::CheckOrders(vehicle)
 	 
 	
 	//AILog.Info(AIVehicle.GetState(vehicle).tostring())	
+}
+
+
+
+function Scheduler::CanVehicleBeScheduled(vehicle)
+{
+	if(Scheduler.VehicleIsUserManaged(vehicle)) {
+		return false;
+	}
+	
+	if(SLVehicle.GetVehicleCargoType(vehicle) == null){
+		AILog.Info(Vehicle.ToString(vehicle) + " has no valid cargo type. Skipping")
+		return false;
+	}
+	
+	//Don't mess with vehicles in depot.  This allows players the chance to move them into a group and issue orders manually
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_IN_DEPOT) {
+		return false;
+	}
+	
+	if(!AIVehicle.IsValidVehicle(vehicle)) {
+		return false;
+	}
+	
+	return true; 
+}
+
+
+function Scheduler::VehicleIsUserManaged(vehicle)
+{
+	return AIGroup.GetName(AIVehicle.GetGroupID(vehicle)) != null
 }
 
 
@@ -222,13 +239,6 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 	}
 	
 	return false
-}
-
-
-
-function Scheduler::VehicleIsUserManaged(vehicle)
-{
-	return AIGroup.GetName(AIVehicle.GetGroupID(vehicle)) != null
 }
 
 
@@ -437,7 +447,6 @@ function Scheduler::RouteToDelivery(vehicle)
 }
 
 
-
 function OrderToString(vehicle, ordernum)
 {
 	if(!AIOrder.IsValidVehicleOrder(vehicle, ordernum))
@@ -483,8 +492,6 @@ function Scheduler::DispatchToStation(vehicle, station, flags)
 	}
 	
 	//Make sure  the order we added is used next
-	
-	
 }
 
 function Scheduler::ClearVehicleOrders(vehicle)
