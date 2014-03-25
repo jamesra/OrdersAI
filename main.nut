@@ -20,13 +20,13 @@
 /** @file main.nut Implementation of OrdersAI, containing the main loop. */
 
 
-import("util.superlib", "SuperLib", 37);
+import("util.superlib", "SuperLib", 38);
 
 
-SLVehicle <- SuperLib.Vehicle;
-Tile <- SuperLib.Tile
-GSIndustry <- AIIndustry
-Industry <- SuperLib.Industry
+//SLVehicle <- SuperLib.Vehicle;
+//Tile <- SuperLib.Tile
+//GSIndustry <- AIIndustry
+//Industry <- SuperLib.Industry
 
 require("scheduler/scheduler.nut");
  
@@ -180,7 +180,7 @@ function OrdersAI::Init()
 {	
 	AILog.Info("Init Starting")
 	OrdersAI.CreateManualGroups()
-	OrdersAI.CreateInfoSign()
+	//OrdersAI.CreateInfoSign()
 	AILog.Info("Init Complete")
 	return
 }
@@ -258,6 +258,6 @@ function OrdersAI::Start()
 	while(1) { 
 		this.CheckVehicles();
 		
-		AIController.Sleep(20);
+		AIController.Sleep(10);
 	}
 }
