@@ -102,6 +102,10 @@ _
 * Many fixes for order list management.  Duplicates should be eliminated.
 * Bumped SuperLib version from 37 to 38
 
+4
+_
+
+* Forgot to update version number in info.nut
   
 
  

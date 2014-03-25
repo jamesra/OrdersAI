@@ -281,7 +281,7 @@ function StationInfo::VehiclesEnrouteToStation(station, cargotype)
 	   */
 	
 	//AILog.Info("List vehicles travelling to " + StationInfo.ToString(station)) 
-	local VehiclesToStation = AIVehicleList()
+	local VehiclesToStation = AIVehicleList_Station(station)
 	if(cargotype != null)
 	{
 		VehiclesToStation.Valuate(AIVehicle.GetCapacity, cargotype)
