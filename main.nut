@@ -180,7 +180,7 @@ function OrdersAI::Init()
 {	
 	AILog.Info("Init Starting")
 	OrdersAI.CreateManualGroups()
-	OrdersAI.CreateInfoSign()
+	//OrdersAI.CreateInfoSign()
 	AILog.Info("Init Complete")
 	return
 }
