@@ -107,5 +107,8 @@ _
 
 * Forgot to update version number in info.nut
   
+5
+_
 
+* Check the stockpile at stations when evaluating pickups.  This allows transfer stations to be used.
  
