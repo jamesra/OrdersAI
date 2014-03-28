@@ -22,10 +22,11 @@ import("util.superlib", "SuperLib", 38);
 
 require("stationinfo.nut")
 require("vehicleinfo.nut")
+require("industryinfo.nut")
 
-SLStation <- SuperLib.Station; 
 SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
+SLStation <- SuperLib.Station;
 
 //Tile <- SuperLib.Tile
 
@@ -48,8 +49,6 @@ class Scheduler
 	
 	static function RouteToCargoPickup(vehicle);
 	
-	static function StationUnvisited(station, cargo);
-	
 	static function DispatchToStation(vehicle, station, flags);
 	
 	static function ClearVehicleOrders(vehicle);
@@ -58,10 +57,26 @@ class Scheduler
 
 
 
+function Scheduler::TestFunction()
+{
+	local passcargo = SLHelper.GetPAXCargo()
+	local passindustry = AIIndustryList_CargoProducing(passcargo)
+	
+	passindustry.Valuate(AIIndustry.HasHeliport)
+	passindustry.KeepValue(1)
+	
+	foreach(industry, _ in passindustry)
+	{
+		AILog.Info("Industry produces passengers: " + AIIndustry.GetName(industry) + " unvisited = " + IndustryInfo.Unvisited(industry, passcargo))
+	}
+	
+}
 
 /* Check a vehicles orders to make sure they are valid */
 function Scheduler::CheckOrders(vehicle)
 {
+	//Scheduler.TestFunction()
+	
 	if(!Scheduler.CanVehicleBeScheduled(vehicle)) {
 		return
 	}	
@@ -242,19 +257,6 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 }
 
 
-function Scheduler::StationUnvisited(station, cargo)
-{
-	if(AIStation.HasCargoRating(station, cargo)){
-		return false
-	}
-	
-	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
-		return false
-	}
-	
-	return true
-}
-
 /* Returns a scalar from 0.0 to 1.0. Lower ratings return a higher scalar */
 function Scheduler::GetRatingWeight(station, cargo)
 {
@@ -289,7 +291,7 @@ function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
 	 }
 	 else
 	 {
-	 	if(Scheduler.StationUnvisited(station, cargotype)) {
+	 	if(StationInfo.StationUnvisited(station, cargotype)) {
 	 		return 1.0
 	 	}
 	 	else {
@@ -340,6 +342,9 @@ function Scheduler::RouteToTownPickup(vehicle)
 	AILog.Info("RouteToTownPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype))
 	local stockpilestations = StationInfo.StationsWithDemand(VehicleInfo.GetVehicleStationType(vehicle),  cargotype)
 	
+	stockpilestations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
+	stockpilestations.KeepValue(1)
+	
 	if(stockpilestations.Count() == 0)
 	{
 	    AILog.Warning(VehicleInfo.ToString(vehicle) + " has nowhere to go!");
@@ -380,6 +385,9 @@ function Scheduler::RouteToCargoPickup(vehicle)
 	AILog.Info("RouteToCargoPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype)) 
 	local stockpilestations = StationInfo.StationsWithSupply(VehicleInfo.GetVehicleStationType(vehicle), cargotype);
 	
+	stockpilestations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
+	stockpilestations.KeepValue(1)
+	
 	if(stockpilestations.Count() == 0)
 	{
 	    AILog.Warning(VehicleInfo.ToString(vehicle) + " has nowhere to go!");
@@ -419,6 +427,9 @@ function Scheduler::RouteToDelivery(vehicle)
 	AILog.Info("RouteToDelivery vehicle #" + vehicle.tostring() + " cargo " + AICargo.GetCargoLabel(cargotype)) 
 	
 	local acceptingstations = StationInfo.StationsWithDemand(VehicleInfo.GetVehicleStationType(vehicle),  cargotype)
+	
+	acceptingstations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
+	acceptingstations.KeepValue(1)
 	
 	if(acceptingstations.Count() == 0)
 	{

@@ -112,3 +112,7 @@ _
 
 * Check the stockpile at stations when evaluating pickups.  This allows transfer stations to be used.
  
+6
+_
+
+* Airport type taken into consideration.  No more jumbo jets being sent to heliports.

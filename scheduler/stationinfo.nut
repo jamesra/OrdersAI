@@ -25,6 +25,8 @@ class StationInfo
 	
 	static function PrintStationCargoList(stations, cargo);
 	
+	static function StationUnvisited(station, cargo);
+	
 	static function GetRatingWeight(station, cargo);
 	
 	static function GetSupplyWeight(station, vehicle, cargo);
@@ -34,6 +36,10 @@ class StationInfo
 	static function StationsWithSupply(station_type, cargo);
 	
 	static function _IsVehicleTravellingToStation(vehicle, station);
+	
+	static function IsValidStationForVehicle(station, vehicle);
+	
+	static function CanAircraftUseAirport(station, vehicle);
 	
 	static function VehiclesEnrouteToStation(station, cargo);
 	
@@ -75,6 +81,18 @@ function StationInfo::PrintCargoList(stations, cargo)
 }
 
 
+function StationInfo::StationUnvisited(station, cargo)
+{
+	if(AIStation.HasCargoRating(station, cargo)){
+		return false
+	}
+	
+	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
+		return false
+	}
+	
+	return true
+}
 
 /* Stations with an existing stockpile of cargo */
 function StationInfo::StationsWithStockpile(station_type, cargo)
@@ -124,9 +142,7 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 	if(Scheduler.CargoProducedAtTowns(cargo))
 	{
 		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
-		
-	
-		
+		 
 	}
 	else
 	{
@@ -195,6 +211,78 @@ function StationInfo::StationsWithDemand(station_type, cargo)
 	
 	
 	return foundstations;
+}
+
+
+function StationInfo::IsValidStationForVehicle(station, vehicle)
+{
+	/*Even if a station_type matches there can be subtypes which are required.  For example jumbo jets cannot land on helicopter pads*/
+	switch(AIVehicle.GetVehicleType(vehicle))
+	{
+		case AIVehicle.VT_RAIL:
+			return true;
+		case AIVehicle.VT_WATER:
+			return true;
+		case AIVehicle.VT_ROAD:
+			return true;
+		case AIVehicle.VT_AIR:
+			return StationInfo.CanAircraftUseAirport(station, vehicle);
+	}
+	
+	AILog.Warning(VehicleInfo.ToString(vehicle) + " is not a known vehicle type")
+	return false
+}
+
+function AirportValidForSmallPlane(airporttype)
+{
+	if(airporttype == AIAirport.AT_HELIPORT || 
+			   airporttype == AIAirport.AT_HELISTATION ||
+			   airporttype == AIAirport.AT_HELIDEPOT)
+			   return false
+			   
+	return true
+}
+
+function AirportValidForBigPlane(airporttype)
+{
+	if(!AirportValidForSmallPlane)
+		return false
+		
+	if(airporttype == AIAirport.AT_SMALL ||
+	   airporttype == AIAirport.AT_LARGE)
+	   return false
+			   
+	return true
+}
+
+function StationInfo::CanAircraftUseAirport(station, vehicle)
+{
+	local engine = AIVehicle.GetEngineType(vehicle)
+	local planetype = AIEngine.GetPlaneType(engine)
+	
+	local airporttype = AIAirport.GetAirportType(AIStation.GetLocation(station))
+	
+	if(airporttype == AIAirport.AT_INVALID)
+	{
+		return false
+	}
+	
+	if( planetype == AIAirport.AT_INVALID)
+	{
+		return false
+	}
+	
+	switch(planetype)
+	{
+		case AIAirport.PT_HELICOPTER:
+			return true	
+		case AIAirport.PT_SMALL_PLANE:
+			return AirportValidForSmallPlane(airporttype)
+		case AIAirport.PT_BIG_PLANE:
+			return AirportValidForBigPlane(airporttype)
+	}
+	
+	return true
 }
 
 
