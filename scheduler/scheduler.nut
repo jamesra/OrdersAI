@@ -23,9 +23,9 @@ require("stationinfo.nut")
 require("vehicleinfo.nut")
 require("industryinfo.nut")
 
-SLStation <- SuperLib.Station; 
 SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
+SLStation <- SuperLib.Station;
 
 //Tile <- SuperLib.Tile
 
@@ -48,7 +48,7 @@ class Scheduler
 	
 	static function RouteToCargoPickup(vehicle);
 	
-	static function StationUnvisited(station, cargo);
+	static function RouteToDelivery(vehicle);
 	
 	static function DispatchToStation(vehicle, station, flags);
 	
@@ -241,19 +241,6 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 	return false
 }
 
-
-function Scheduler::StationUnvisited(station, cargo)
-{
-	if(AIStation.HasCargoRating(station, cargo)){
-		return false
-	}
-	
-	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
-		return false
-	}
-	
-	return true
-}
 
 /* Returns a scalar from 0.0 to 1.0. Lower ratings return a higher scalar */
 function Scheduler::GetRatingWeight(station, cargo)
