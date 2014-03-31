@@ -58,10 +58,26 @@ class Scheduler
 
 
 
+function Scheduler::TestFunction()
+{
+	local passcargo = SLHelper.GetPAXCargo()
+	local passindustry = AIIndustryList_CargoProducing(passcargo)
+	
+	passindustry.Valuate(AIIndustry.HasHeliport)
+	passindustry.KeepValue(1)
+	
+	foreach(industry, _ in passindustry)
+	{
+		AILog.Info("Industry produces passengers: " + AIIndustry.GetName(industry) + " unvisited = " + IndustryInfo.Unvisited(industry, passcargo))
+	}
+	
+}
 
 /* Check a vehicles orders to make sure they are valid */
 function Scheduler::CheckOrders(vehicle)
 {
+	//Scheduler.TestFunction()
+	
 	if(!Scheduler.CanVehicleBeScheduled(vehicle)) {
 		return
 	}	
@@ -276,7 +292,7 @@ function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
 	 }
 	 else
 	 {
-	 	if(Scheduler.StationUnvisited(station, cargotype)) {
+	 	if(StationInfo.StationUnvisited(station, cargotype)) {
 	 		return 1.0
 	 	}
 	 	else {
