@@ -63,7 +63,7 @@ Future Work
 
 Weight distance and vehicle speed into decisions
 
-Support industry helicopter pads
+If a station stops supplying a cargo move waiting vehicles to the next station in the order list
 
 
 Random stuff

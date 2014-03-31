@@ -405,7 +405,7 @@ function StationInfo::GetLoadingReservedCargoCount(station, cargotype)
 	parkedvehicles.KeepValue(AIVehicle.VS_AT_STATION)
 	
 	if(parkedvehicles.Count() > 0) {
-		AILog.Info("Vehicles loading at " + StationInfo.VehiclesToStationString(station, parkedvehicles))
+		AILog.Info("    Vehicles loading at " + StationInfo.VehiclesToStationString(station, parkedvehicles))
 	}
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
@@ -431,7 +431,7 @@ function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
 		AILog.Warning("Error, enroute vehicles is null")
 	
 	if(enroutevehicles.Count() > 0) {
-		AILog.Info("Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
+		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
 	}  
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
@@ -455,7 +455,7 @@ function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 		AILog.Warning("Error, enroute vehicles is null")
 	
 	if(enroutevehicles.Count() > 0) {
-		AILog.Info("Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
+		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
 	}  
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.

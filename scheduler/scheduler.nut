@@ -73,13 +73,13 @@ function Scheduler::TestFunction()
 	
 }
 
-/* Check a vehicles orders to make sure they are valid */
+/* Check a vehicles orders to make sure they are valid.  Returns true if the route was updated */
 function Scheduler::CheckOrders(vehicle)
 {
 	//Scheduler.TestFunction()
 	
 	if(!Scheduler.CanVehicleBeScheduled(vehicle)) {
-		return
+		return false
 	}	
 	   
 	if(Scheduler.NeedsOrderScrub(vehicle))
@@ -122,8 +122,10 @@ function Scheduler::CheckOrders(vehicle)
 			
 		}
 		
-		return
+		return true
 	}
+	
+	return false
 	/*
 	else
 	{
@@ -138,11 +140,7 @@ function Scheduler::CheckOrders(vehicle)
 
 
 function Scheduler::CanVehicleBeScheduled(vehicle)
-{
-	if(Scheduler.VehicleIsUserManaged(vehicle)) {
-		return false;
-	}
-	
+{ 
 	if(SLVehicle.GetVehicleCargoType(vehicle) == null){
 		AILog.Info(Vehicle.ToString(vehicle) + " has no valid cargo type. Skipping")
 		return false;
@@ -158,12 +156,6 @@ function Scheduler::CanVehicleBeScheduled(vehicle)
 	}
 	
 	return true; 
-}
-
-
-function Scheduler::VehicleIsUserManaged(vehicle)
-{
-	return AIGroup.GetName(AIVehicle.GetGroupID(vehicle)) != null
 }
 
 
@@ -234,8 +226,6 @@ function Scheduler::NeedsRouteUpdate(vehicle)
 			}
 		}	
 	}
-			
-	
 	
 	return false;
 }
@@ -587,10 +577,10 @@ function Scheduler::NeedsOrderScrub(vehicle)
 
 function Scheduler::ScrubOrders(vehicle, MaxOrders)
 {
-	AILog.Info("Scrubbing orders for " + VehicleInfo.ToString(vehicle));
+	//AILog.Info("Scrubbing orders for " + VehicleInfo.ToString(vehicle));
 	while(AIOrder.GetOrderCount(vehicle) > MaxOrders)
 	{ 
-		AILog.Info("  Removing order " + OrderToString(vehicle, 0));	
+//		AILog.Info("  Removing order " + OrderToString(vehicle, 0));	
 		AIOrder.RemoveOrder(vehicle, 0);
 	}	
 }
