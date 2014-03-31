@@ -69,8 +69,17 @@ function Scheduler::TestFunction()
 	foreach(industry, _ in passindustry)
 	{
 		AILog.Info("Industry produces passengers: " + AIIndustry.GetName(industry) + " unvisited = " + IndustryInfo.Unvisited(industry, passcargo))
-	}
+	}	
+}
+
+function Scheduler::SkipToNextOrder(vehicle)
+{
+	local orderposition = AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)
+	local nextorder = orderposition + 1
+	if(nextorder >= AIOrder.GetOrderCount(vehicle))
+		nextorder = 0
 	
+	AIOrder.SkipToOrder(vehicle, nextorder)
 }
 
 /* Check a vehicles orders to make sure they are valid.  Returns true if the route was updated */
@@ -85,6 +94,13 @@ function Scheduler::CheckOrders(vehicle)
 	if(Scheduler.NeedsOrderScrub(vehicle))
 	{
 		Scheduler.ScrubOrders(vehicle, Scheduler.OrderHistoryLength)
+	}
+	
+	if(Scheduler.NeedsOrderSkip(vehicle))
+	{
+		/* Easiest to clear everything and let the AI figure out the next move */
+		AILog.Warning(VehicleInfo.ToString(vehicle) + " needed to skip an order.  Possibly trying to load at a station without supply")
+		Scheduler.ClearVehicleOrders(vehicle)		
 	}
 	
 	//AILog.Info("CheckOrders vehicle #" + vehicle.tostring())
@@ -137,6 +153,25 @@ function Scheduler::CheckOrders(vehicle)
 	//AILog.Info(AIVehicle.GetState(vehicle).tostring())	
 }
 
+
+function Scheduler::NeedsOrderSkip(vehicle)
+{
+	/*Sometimes an order was valid, but the game situation changes so the vehicle should move on.*/
+
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_AT_STATION)
+	{
+		if(Scheduler.CargoProducedAtTowns(SLVehicle.GetVehicleCargoType(vehicle)))
+		{
+			return false
+		}
+		
+		/* Perhaps the industry producing the cargo closed.  The train should move on in its order list */
+		if(VehicleInfo.WaitingToLoad(vehicle) && !VehicleInfo.CanLoad(vehicle))
+			return true
+	}	
+	
+	return false
+}
 
 
 function Scheduler::CanVehicleBeScheduled(vehicle)
@@ -236,9 +271,9 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_AT_STATION && AIVehicle.GetCargoLoad(vehicle, cargo) > 0)
 		return true
 	
-	//AILog.Info("Vehicle " + vehicle.tostring() + " loading = " + VehicleInfo.IsLoading(vehicle).tostring())
+	//AILog.Info("Vehicle " + vehicle.tostring() + " loading = " + VehicleInfo.CanLoad(vehicle).tostring())
 	
-	if(VehicleInfo.IsLoading(vehicle))
+	if(VehicleInfo.CanLoad(vehicle))
 	{
 		//Are we loading cargo at this station? If so find a destination
 		return true

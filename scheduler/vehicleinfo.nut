@@ -4,7 +4,7 @@ class VehicleInfo
 {
 	static function VehicleString(vehicle);
 	
-	static function IsLoading(vehicle);
+	static function CanLoad(vehicle);
 	
 	static function GetVehicleStationType(vehicle);
 	
@@ -48,7 +48,7 @@ function VehicleInfo::GetAircraftType(vehicle)
 }
 
 
-function VehicleInfo::IsLoading(vehicle)
+function VehicleInfo::CanLoad(vehicle)
 {
 	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_AT_STATION) 
 		return false
@@ -59,6 +59,18 @@ function VehicleInfo::IsLoading(vehicle)
 	local vehicleStation = StationInfo.StationForVehicle(vehicle)
 	
 	return SLStation.IsCargoSupplied(vehicleStation, cargotype)
+}
+
+
+function VehicleInfo::WaitingToLoad(vehicle)
+{
+	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_AT_STATION) 
+		return false
+	  
+	//Does the station supply the cargo we need? 
+	local OrderFlags = AIOrder.GetOrderFlags(vehicle, AIOrder.ORDER_CURRENT)
+	
+	return OrderFlags & AIOrder.OF_LOAD_FLAGS
 }
 
 
