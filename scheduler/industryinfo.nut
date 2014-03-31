@@ -34,3 +34,52 @@ function IndustryInfo::Unvisited(industry, cargo)
 {
 	return (AIIndustry.GetLastMonthProduction(industry, cargo) == 0) && (AIIndustry.GetStockpiledCargo(industry, cargo) == 0)
 }
+
+function IndustryInfo::AcceptingIndustryLocations(cargotype)
+{
+	local industrylist = AIIndustryList_CargoAccepting(cargotype)
+	industrylist.Valuate(AIIndustry.GetStockpiledCargo,cargotype)
+	industrylist.KeepAboveValue(0)
+	
+	industrylist.Valuate(AIIndustry.GetLocation)	
+	return industrylist
+}
+
+/*
+function IndustryInfo::ProducingIndustryLocations(cargotype)
+{
+	local industrylist = AIIndustryList_CargoAccepting(cargotype)
+	industrylist.Valuate(AIIndustry.GetStockpiledCargo,cargotype)
+	industrylist.KeepAboveValue(0)
+	
+	industrylist.Valuate(AIIndustry.GetLocation)	
+	return industrylist
+}
+
+
+function IndustryInfo::IndustriesForStation(station, cargotype)
+{
+	local coverageradius = AIStation.GetStationCoverageRadius(station)
+	foreach(station, llocation
+	
+}
+
+
+function IndustryInfo::CargoWaitingForProcessing(station, cargotype)
+{
+	stationlist.Valuate(AIStation.GetLocation)
+	
+	foreach(industry, ilocation in industrylist)
+	{
+		foreach(station, slocation in stationlist)
+		{
+			local coverageradius = AIStation.GetStationCoverageRadius(station)
+			local distance = AIMap.DistanceManhattan(slocation, ilocation)
+			if(coverageradius >= distance)
+			{
+				ret	
+			}
+		}
+	}
+}
+*/

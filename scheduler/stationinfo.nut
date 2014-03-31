@@ -423,6 +423,30 @@ function StationInfo::GetLoadingReservedCargoCount(station, cargotype)
 }
 
 
+function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
+{
+	/* Amount of cargo loaded on trains travelling to the station*/
+	local enroutevehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
+	if(enroutevehicles == null)
+		AILog.Warning("Error, enroute vehicles is null")
+	
+	if(enroutevehicles.Count() > 0) {
+		AILog.Info("Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
+	}  
+	
+	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
+	enroutevehicles.Valuate(AIVehicle.GetCargoLoad, cargotype)
+	
+	local totalReservation = 0
+	foreach (v, cargocount in enroutevehicles) 
+	{
+		totalReservation += cargocount
+	}
+	
+	return totalReservation
+}
+
+
 function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 {
 	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles already scheduled to visit, or already visiting and loading*/
