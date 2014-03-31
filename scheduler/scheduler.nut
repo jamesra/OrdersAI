@@ -19,9 +19,9 @@
  
 import("util.superlib", "SuperLib", 38);
 
-
 require("stationinfo.nut")
 require("vehicleinfo.nut")
+require("industryinfo.nut")
 
 SLStation <- SuperLib.Station; 
 SLHelper <- SuperLib.Helper;
@@ -314,18 +314,57 @@ function OrderStationsByPickupAttractiveness(stationlist, vehicle)
 	return stationlist;
 }
 
+
+function RemoveVehicleCurrentStation(stationlist, vehicle)
+{ 
+	local vehiclestation = AIStation.GetStationID(AIVehicle.GetLocation(vehicle))
+	/*
+	if(stationlist.HasItem(vehiclestation))
+		AILog.Info("  Has item " + StationInfo.ToString(vehiclestation))	
+	else
+		AILog.Info(" *** NO ITEM ***" + StationInfo.ToString(vehiclestation))
+	*/
+	stationlist.RemoveItem(vehiclestation)
+	/*
+	foreach(station, _ in stationlist) 
+	{
+		AILog.Info("  *** " + StationInfo.ToString(station))		
+	}
+	*/
+	/*
+	if(stationlist.HasItem(vehiclestation))
+		AILog.Warning("  Item not removed correctly " + StationInfo.ToString(vehiclestation))
+	else
+	{
+		AILog.Info("  Item correctly removed " + StationInfo.ToString(vehiclestation))
+	}
+		*/
+	return stationlist	
+	
+}
+
+
 function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 {
 	local cargotype = SLVehicle.GetVehicleCargoType(vehicle)
 	
-	stationlist.Valuate(StationInfo.NumVehiclesEnrouteToStation, cargotype)
+	stationlist.Valuate(StationInfo.GetEnrouteCargoDeliveryCount, cargotype)
 	
 	stationlist.Sort(AIList.SORT_BY_VALUE, AIList.SORT_ASCENDING) 
 	
+	
+	/*
+	foreach(industry, stockpile in industrylist)
+	{
+		AILog.Info("  " + AIIndustry.GetName(industry) + " stockpile waiting to be processed " + stockpile.tostring() )
+	}
+	*/
+	/*
 	foreach(station, _ in stationlist) 
 	{
 		AILog.Info("  " + StationInfo.NumVehiclesEnrouteToStation(station, cargotype).tostring() + " vehicles enroute to " + StationInfo.ToString(station))		
 	}
+	*/
 	
 	return stationlist
 }
@@ -340,6 +379,12 @@ function Scheduler::RouteToTownPickup(vehicle)
 	AILog.Info("RouteToTownPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype))
 	local stockpilestations = StationInfo.StationsWithDemand(VehicleInfo.GetVehicleStationType(vehicle),  cargotype)
 	
+	stockpilestations = RemoveVehicleCurrentStation(stockpilestations, vehicle)
+	stockpilestations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
+	stockpilestations.KeepValue(1)
+	
+	
+	
 	if(stockpilestations.Count() == 0)
 	{
 	    AILog.Warning(VehicleInfo.ToString(vehicle) + " has nowhere to go!");
@@ -352,6 +397,8 @@ function Scheduler::RouteToTownPickup(vehicle)
 		
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
 		
+		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), AIOrder.OF_FULL_LOAD_ANY);
+		/*
 		foreach( station, _ in orderedStations)
 		{
 			//AILog.Info("Trying station #" + station.tostring())
@@ -364,10 +411,11 @@ function Scheduler::RouteToTownPickup(vehicle)
 			else
 			{
 				
-				Scheduler.DispatchToStation(vehicle, station, AIOrder.OF_FULL_LOAD_ANY);
+				
 				break; 
 			} 
 		}
+		*/
 	}	
 }
 
@@ -380,6 +428,12 @@ function Scheduler::RouteToCargoPickup(vehicle)
 	AILog.Info("RouteToCargoPickup " + VehicleInfo.ToString(vehicle) + " cargo " + AICargo.GetCargoLabel(cargotype)) 
 	local stockpilestations = StationInfo.StationsWithSupply(VehicleInfo.GetVehicleStationType(vehicle), cargotype);
 	
+	stockpilestations = RemoveVehicleCurrentStation(stockpilestations, vehicle)
+	
+	stockpilestations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
+	stockpilestations.KeepValue(1)
+	
+	
 	if(stockpilestations.Count() == 0)
 	{
 	    AILog.Warning(VehicleInfo.ToString(vehicle) + " has nowhere to go!");
@@ -392,6 +446,8 @@ function Scheduler::RouteToCargoPickup(vehicle)
 		
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
 		
+		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), AIOrder.OF_FULL_LOAD_ANY);
+		/*
 		foreach( station, _ in orderedStations)
 		{
 			//AILog.Info("Trying station #" + station.tostring())
@@ -408,7 +464,49 @@ function Scheduler::RouteToCargoPickup(vehicle)
 				break; 
 			} 
 		}
+		*/
 	}	
+}
+
+function RemoveItemsNotMatchingFirstValue(list)
+{
+	list.KeepValue(list.GetValue(list.Begin()))
+	return list	
+}
+
+function ToItem(item)
+{
+	return item
+}
+
+function RandListItem(list)
+{
+	/* Return a random item from the list */
+	if(list.Count() == 0)
+		return null 
+	else if(list.Count() > 1)
+		AILog.Info(" !!!! Random choice being made!")
+		
+	local itemindex = AIBase.RandRange(list.Count())
+	list.Valuate(ToItem)
+	local chosen = list.GetValue(itemindex)
+	
+	local i = 0
+	foreach(item, _ in list)
+	{
+		if(i == itemindex)
+		{
+			chosen = item
+			break	
+		}
+		i++
+	}
+	
+	if(list.Count() > 1)
+		AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
+		
+	return chosen
+	
 }
 
 /* Add orders to a vehicle to deliver a cargo at a station */
@@ -420,15 +518,27 @@ function Scheduler::RouteToDelivery(vehicle)
 	
 	local acceptingstations = StationInfo.StationsWithDemand(VehicleInfo.GetVehicleStationType(vehicle),  cargotype)
 	
+	acceptingstations = RemoveVehicleCurrentStation(acceptingstations, vehicle)
+	
+	acceptingstations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
+	acceptingstations.KeepValue(1)
+	
 	if(acceptingstations.Count() == 0)
 	{
 	    AILog.Warning("Vehicle #" + vehicle.tostring() + " has nowhere to go!");
 	    return	
 	}
 	
+	
 	//Lots of ways to decide which station to deliver to.  Try to spread the deliveries according to station congestion for now
 	local orderedStations = OrderStationsByDeliveryAttractiveness(acceptingstations, vehicle)
+	orderedStations = RemoveItemsNotMatchingFirstValue(orderedStations)
 	
+	local deststation = RandListItem(orderedStations)
+	
+	
+	Scheduler.DispatchToStation(vehicle, deststation, AIOrder.OF_NONE);
+	/*
 	foreach( station, _ in orderedStations)
 	{
 		//AILog.Info("Trying station #" + station.tostring())
@@ -444,6 +554,7 @@ function Scheduler::RouteToDelivery(vehicle)
 			break; 
 		} 
 	}
+	*/
 }
 
 
