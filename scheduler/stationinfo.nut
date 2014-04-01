@@ -142,13 +142,13 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 	if(Scheduler.CargoProducedAtTowns(cargo))
 	{
 		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
-		 
 	}
 	else
 	{
-		foundstations = AIStationList(station_type)
+		foundstations = IndustryInfo.StationsWithSupply(station_type, cargo)
+		/*foundstations = AIStationList(station_type)
 		foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
-		foundstations.KeepValue(1)
+		foundstations.KeepValue(1)*/
 	}
 	
 	/* Check for stations that may have transfer cargo */

@@ -45,6 +45,40 @@ function IndustryInfo::AcceptingIndustryLocations(cargotype)
 	return industrylist
 }
 
+
+function IndustryWithinStationRadius(station, industrylist)
+{
+	local slocation  = AIStation.GetLocation(station)
+	local coverageradius = AIStation.GetStationCoverageRadius(station)
+	foreach(industry, ilocation in industrylist)
+	{
+		local distance = AIMap.DistanceManhattan(slocation, ilocation)
+		if(coverageradius >= distance)
+		{
+			return true
+		}
+	}
+	
+	return false
+}
+
+
+function IndustryInfo::StationsWithSupply(stationtype, cargotype)
+{
+	local producerlist = AIIndustryList_CargoProducing(cargotype)
+    producerlist.Valuate(AIIndustry.GetAmountOfStationsAround)
+	producerlist.KeepAboveValue(0)
+	
+	producerlist.Valuate(AIIndustry.GetLocation)	
+	
+	local stationlist = AIStationList(stationtype)
+	stationlist.Valuate(IndustryWithinStationRadius, producerlist)
+	stationlist.KeepAboveValue(0)
+	
+	return stationlist
+}
+
+
 /*
 function IndustryInfo::ProducingIndustryLocations(cargotype)
 {
