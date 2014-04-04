@@ -63,6 +63,11 @@ function VehicleInfo::CanLoad(vehicle)
 	
 	local vehicleStation = StationInfo.StationForVehicle(vehicle)
 	
+	if(vehicleStation == null)
+	{
+		return false;	
+	}
+	
 	return SLStation.IsCargoSupplied(vehicleStation, cargotype)
 }
 
