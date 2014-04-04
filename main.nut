@@ -243,9 +243,13 @@ function OrdersAI::Start()
 
 	/* Before starting the main loop, sleep a bit to prevent problems with ecs */
 	//AIController.Sleep(max(1, 260 - (AIController.GetTick() - start_tick)));
-	while(1) { 
+	while(1) {
+		local start_tick = AIController.GetTick(); 
 		this.CheckVehicles();
+		local ticks_used = AIController.GetTick() - start_tick;
 		
-		AIController.Sleep(10);
+		AILog.Info("****** Ticks used to route vehicles: " + ticks_used.tostring() + " with " + AIController.GetOpsTillSuspend().tostring() + " ops remaining ******")
+		
+		//AIController.Sleep(10);
 	}
 }
