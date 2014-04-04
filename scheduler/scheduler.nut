@@ -26,6 +26,7 @@ require("industryinfo.nut")
 SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
 SLStation <- SuperLib.Station;
+SLIndustry <- SuperLib.Industry;
 
 //Tile <- SuperLib.Tile
 
@@ -381,6 +382,11 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 	stationlist.Sort(AIList.SORT_BY_VALUE, AIList.SORT_ASCENDING) 
 	
 	
+	foreach(station, enroutecount in stationlist) 
+	{
+		AILog.Info("  " + enroutecount.tostring() + " units enroute to " + StationInfo.ToString(station))		
+	}
+	
 	/*
 	foreach(industry, stockpile in industrylist)
 	{
@@ -512,8 +518,8 @@ function RandListItem(list)
 	/* Return a random item from the list */
 	if(list.Count() == 0)
 		return null 
-	else if(list.Count() > 1)
-		AILog.Info(" !!!! Random choice being made!")
+	//else if(list.Count() > 1)
+		//AILog.Info(" !!!! Random choice being made!")
 		
 	local itemindex = AIBase.RandRange(list.Count())
 	list.Valuate(ToItem)
@@ -530,8 +536,8 @@ function RandListItem(list)
 		i++
 	}
 	
-	if(list.Count() > 1)
-		AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
+	//if(list.Count() > 1)
+		//AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
 		
 	return chosen
 	
@@ -556,11 +562,17 @@ function Scheduler::RouteToDelivery(vehicle)
 	    AILog.Warning("Vehicle #" + vehicle.tostring() + " has nowhere to go!");
 	    return	
 	}
-	
-	
+		
 	//Lots of ways to decide which station to deliver to.  Try to spread the deliveries according to station congestion for now
 	local orderedStations = OrderStationsByDeliveryAttractiveness(acceptingstations, vehicle)
 	orderedStations = RemoveItemsNotMatchingFirstValue(orderedStations)
+	/*
+	AILog.Info("Winning delivery candidates")
+	foreach(station, _ in orderedStations)
+	{
+		AILog.Info("    " + StationInfo.ToString(station)) 
+	}
+	*/
 	
 	local deststation = RandListItem(orderedStations)
 	
