@@ -479,8 +479,13 @@ function Scheduler::RouteToCargoPickup(vehicle)
 		//Scheduler.ClearVehicleOrders(vehicle);
 		
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
+		orderedStations = RemoveItemsNotMatchingFirstValue(orderedStations)
 		
-		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), AIOrder.OF_FULL_LOAD_ANY);
+		local chosenStation = NearestStation(orderedStations, vehicle)
+		
+		Scheduler.DispatchToStation(vehicle, chosenStation, AIOrder.OF_FULL_LOAD_ANY);
+		
+		
 		/*
 		foreach( station, _ in orderedStations)
 		{
@@ -502,46 +507,6 @@ function Scheduler::RouteToCargoPickup(vehicle)
 	}	
 }
 
-function RemoveItemsNotMatchingFirstValue(list)
-{
-	list.KeepValue(list.GetValue(list.Begin()))
-	return list	
-}
-
-function ToItem(item)
-{
-	return item
-}
-
-function RandListItem(list)
-{
-	/* Return a random item from the list */
-	if(list.Count() == 0)
-		return null 
-	//else if(list.Count() > 1)
-		//AILog.Info(" !!!! Random choice being made!")
-		
-	local itemindex = AIBase.RandRange(list.Count())
-	list.Valuate(ToItem)
-	local chosen = list.GetValue(itemindex)
-	
-	local i = 0
-	foreach(item, _ in list)
-	{
-		if(i == itemindex)
-		{
-			chosen = item
-			break	
-		}
-		i++
-	}
-	
-	//if(list.Count() > 1)
-		//AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
-		
-	return chosen
-	
-}
 
 /* Add orders to a vehicle to deliver a cargo at a station */
 function Scheduler::RouteToDelivery(vehicle)
@@ -596,6 +561,65 @@ function Scheduler::RouteToDelivery(vehicle)
 	}
 	*/
 }
+
+
+function RemoveItemsNotMatchingFirstValue(list)
+{
+	list.KeepValue(list.GetValue(list.Begin()))
+	return list	
+}
+
+function ToItem(item)
+{
+	return item
+}
+
+
+function NearestStation(stations, vehicle)
+{
+	/* Returns the station nearest to the vehicle */
+	stations.Valuate(AIStation.GetDistanceManhattanToTile, AIVehicle.GetLocation(vehicle))
+	
+	foreach(station, distance in stations)
+	{
+		AILog.Info("   " + StationInfo.ToString(station) + " distance " + distance.tostring())
+	}
+	
+	stations.Sort(AIList.SORT_BY_VALUE, true)
+	
+	return stations.Begin()
+}
+
+function RandListItem(list)
+{
+	/* Return a random item from the list */
+	if(list.Count() == 0)
+		return null 
+	//else if(list.Count() > 1)
+		//AILog.Info(" !!!! Random choice being made!")
+		
+	local itemindex = AIBase.RandRange(list.Count())
+	list.Valuate(ToItem)
+	local chosen = list.GetValue(itemindex)
+	
+	local i = 0
+	foreach(item, _ in list)
+	{
+		if(i == itemindex)
+		{
+			chosen = item
+			break	
+		}
+		i++
+	}
+	
+	//if(list.Count() > 1)
+		//AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
+		
+	return chosen
+	
+}
+
 
 
 function OrderToString(vehicle, ordernum)
