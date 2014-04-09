@@ -38,6 +38,7 @@ class OrdersAI extends AIInfo {
 		//AddSetting({name = "depot_near_station", description = "Build train depots near the loading station instead of near the dropoff station.", easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, flags = AICONFIG_BOOLEAN});
 		//AddSetting({name = "build_bus_dtrs", description = "Build drive-through stops for busses", easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, flags = AICONFIG_BOOLEAN});
 		//AddSetting({name = "debug_signs", description = "Enable building debug signs", easy_value = 0, medium_value = 0, hard_value = 0, custom_value = 0, flags = AICONFIG_BOOLEAN});
+		AddSetting({name = "min_rating", description = "Minimum service rate in percent to consider availble cargo", min_value = 0, max_value = 100, easy_value = 50, medium_value = 50, hard_value = 50, custom_value = 50, step_size = 5, flags = AICONFIG_INGAME});
 	}
 };
 
