@@ -592,7 +592,8 @@ function NearestStation(stations, vehicle)
 
 function RandListItem(list)
 {
-	/* Return a random item from the list */
+	/* Return a random item from the list.*/
+	 
 	if(list.Count() == 0)
 		return null 
 	//else if(list.Count() > 1)
@@ -602,6 +603,10 @@ function RandListItem(list)
 	list.Valuate(ToItem)
 	local chosen = list.GetValue(itemindex)
 	
+	
+	 /* This for loop should be doable with indexing on a random number, 
+	   but for some reason I wasn't able to get that working with AILists. 
+	  */
 	local i = 0
 	foreach(item, _ in list)
 	{
@@ -619,7 +624,6 @@ function RandListItem(list)
 	return chosen
 	
 }
-
 
 
 function OrderToString(vehicle, ordernum)
