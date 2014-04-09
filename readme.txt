@@ -124,3 +124,8 @@ _
 * Vehicles loading at a station where the producing industry shuts down now move on correctly
 * Optimized the search for stations with supply.  Vehicles get order updates more quickly
 * Automatically create groups for the AI vehicles according to cargo type.
+
+8
+_
+
+* If pickup stations have equal weight, route to the nearest station
