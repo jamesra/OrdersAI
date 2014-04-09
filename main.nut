@@ -29,6 +29,7 @@ import("util.superlib", "SuperLib", 38);
 //Industry <- SuperLib.Industry
 
 require("scheduler/scheduler.nut");
+require("organizer/organizer.nut");
  
 /**
  * The main class of OrdersAI.
@@ -139,25 +140,27 @@ function OrdersAI::CreateInfoSign()
 	return 	
 }
 
-function OrdersAI::GetOrCreateGroup(VehicleType, GroupName)
-{
-	foreach(group,_ in AIGroupList())
-	{
-		if(AIGroup.GetName(group) == GroupName)
-		{
-			return group
-		}
-	}
+
+function OrdersAI::Init()
+{	
+	AILog.Info("Init Starting")
+	OrdersAI.CreateManualGroups()
+	//OrdersAI.CreateInfoSign()
+	AILog.Info("Init Complete")
 	
-	OrdersAI.CreateGroup(VehicleType, GroupName)
+	//Organizer.AssignVehiclesToGroups()
+	return
 }
 
-function OrdersAI::CreateGroup(VehicleType, GroupName)
-{
-	local newgroup = AIGroup.CreateGroup(VehicleType)
-	AIGroup.SetName(newgroup, GroupName)
-	return newgroup
+function OrdersAI::Save() {
+	return { 
+	};
 }
+
+//function OrdersAI::Load(version, data) {
+//}
+
+
 
 function OrdersAI::CreateManualGroups()
 {
@@ -170,44 +173,21 @@ function OrdersAI::CreateManualGroups()
 	
 	local ManualGroupName = "Human Controlled"
 	
-	GetOrCreateGroup(AIVehicle.VT_ROAD, ManualGroupName + " vehicles")
-	GetOrCreateGroup(AIVehicle.VT_RAIL, ManualGroupName + " trains")
-	GetOrCreateGroup(AIVehicle.VT_WATER, ManualGroupName + " vessels")
-	GetOrCreateGroup(AIVehicle.VT_AIR, ManualGroupName + " aircraft")
+	Organizer.GetOrCreateGroup(AIVehicle.VT_ROAD, ManualGroupName + " vehicles")
+	Organizer.GetOrCreateGroup(AIVehicle.VT_RAIL, ManualGroupName + " trains")
+	Organizer.GetOrCreateGroup(AIVehicle.VT_WATER, ManualGroupName + " vessels")
+	Organizer.GetOrCreateGroup(AIVehicle.VT_AIR, ManualGroupName + " aircraft")
 }
-
-function OrdersAI::Init()
-{	
-	AILog.Info("Init Starting")
-	OrdersAI.CreateManualGroups()
-	//OrdersAI.CreateInfoSign()
-	AILog.Info("Init Complete")
-	return
-}
-
-function OrdersAI::Save() {
-	return { 
-	};
-}
-
-//function OrdersAI::Load(version, data) {
-//}
  
 
 function OrdersAI::GetEvents()
 {
 	while (AIEventController.IsEventWaiting()) {
 		local e = AIEventController.GetNextEvent();
-		switch (e.GetEventType()) {
-			case AIEvent.AI_ET_INDUSTRY_CLOSE:
-				//local ind = AIEventIndustryClose.Convert(e).GetIndustryID();
-				//this._pending_events.push([AIEvent.AI_ET_INDUSTRY_CLOSE, ind]);
-				break;
-
-			case AIEvent.AI_ET_INDUSTRY_OPEN:
-				//local ind = AIEventIndustryOpen.Convert(e).GetIndustryID();
-				//this._pending_events.push([AIEvent.AI_ET_INDUSTRY_OPEN, ind]);
-				break;
+		switch (e.GetEventType()) {				
+			case AIEvent.AIEventVehicleWaitingInDepot:
+				//Organizer.AssignVehicleToGroup(e.GetVehicleID());
+				break; 
 		}
 	}
 }
@@ -237,7 +217,15 @@ function OrdersAI::CheckVehicles()
 	
 	foreach(vehicle, _ in vehicle_list)
 	{ 
-		Scheduler.CheckOrders(vehicle);
+		if(Organizer.VehicleIsUserManaged(vehicle)) {
+			continue;
+		}
+		
+		local routeupdate = Scheduler.CheckOrders(vehicle);
+		
+		if(routeupdate)
+			Organizer.AssignVehicleToGroup(vehicle);
+			
 		//AILog.Info();
 	}	
 }
@@ -255,9 +243,13 @@ function OrdersAI::Start()
 
 	/* Before starting the main loop, sleep a bit to prevent problems with ecs */
 	//AIController.Sleep(max(1, 260 - (AIController.GetTick() - start_tick)));
-	while(1) { 
+	while(1) {
+		local start_tick = AIController.GetTick(); 
 		this.CheckVehicles();
+		local ticks_used = AIController.GetTick() - start_tick;
 		
-		AIController.Sleep(10);
+		AILog.Info("****** Ticks used to route vehicles: " + ticks_used.tostring() + " with " + AIController.GetOpsTillSuspend().tostring() + " ops remaining ******")
+		
+		//AIController.Sleep(10);
 	}
 }

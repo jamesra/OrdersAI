@@ -23,6 +23,12 @@ class IndustryInfo
 	static function ToString(industry);
 	
 	static function Unvisited(industry, cargo);
+	
+	static function PrintIndustryList(industrylist);
+	
+	static function AcceptingIndustryLocations(cargotype);
+	
+	static function StationsWithSupply(stationtype, cargotype);
 }
 
 function IndustryInfo::ToString(industry)
@@ -35,6 +41,14 @@ function IndustryInfo::Unvisited(industry, cargo)
 	return (AIIndustry.GetLastMonthProduction(industry, cargo) == 0) && (AIIndustry.GetStockpiledCargo(industry, cargo) == 0)
 }
 
+function IndustryInfo::PrintIndustryList(industrylist)
+{
+	foreach(ind,_ in industrylist)	
+	{
+		AILog.Info("  " + IndustryInfo.ToString(ind))	
+	}
+}
+
 function IndustryInfo::AcceptingIndustryLocations(cargotype)
 {
 	local industrylist = AIIndustryList_CargoAccepting(cargotype)
@@ -44,6 +58,49 @@ function IndustryInfo::AcceptingIndustryLocations(cargotype)
 	industrylist.Valuate(AIIndustry.GetLocation)	
 	return industrylist
 }
+
+
+function IndustryPossiblyWithinStationRadius(station, industrylist)
+{
+	local slocation  = AIStation.GetLocation(station)
+	//TODO: Should probably use *2 and add the max station spread from game configuration here instead of * 5
+	local coverageradius = AIStation.GetStationCoverageRadius(station) * 5
+	//AILog.Info(StationInfo.ToString(station) + " coverage radius = " + coverageradius.tostring())
+	foreach(industry, ilocation in industrylist)
+	{
+		local distance = AIStation.GetDistanceManhattanToTile(station, ilocation)
+		//AILog.Info("Distance " + IndustryInfo.ToString(industry) + " to " + StationInfo.ToString(station) + " = " + distance.tostring())
+		if(coverageradius >= distance)
+		{
+			//AILog.Info("Distance " + IndustryInfo.ToString(industry) + " to " + StationInfo.ToString(station) + " = " + distance.tostring())
+			return true
+		}
+	}
+	
+	return false
+}
+
+
+function IndustryInfo::StationsWithSupply(stationtype, cargotype)
+{
+	local producerlist = AIIndustryList_CargoProducing(cargotype) 
+    producerlist.Valuate(AIIndustry.GetAmountOfStationsAround)
+	producerlist.KeepAboveValue(0)
+	
+	//AILog.Info("Master list with stations")
+	//IndustryInfo.PrintIndustryList(producerlist)
+	producerlist.Valuate(AIIndustry.GetLocation)	
+	
+	local stationlist = AIStationList(stationtype)
+	stationlist.Valuate(IndustryPossiblyWithinStationRadius, producerlist)
+	stationlist.RemoveValue(0)
+	
+	stationlist.Valuate(SLStation.IsCargoSupplied, cargotype)
+	stationlist.RemoveValue(0)
+	
+	return stationlist
+}
+
 
 /*
 function IndustryInfo::ProducingIndustryLocations(cargotype)

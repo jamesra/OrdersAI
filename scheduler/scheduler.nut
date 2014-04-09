@@ -26,6 +26,7 @@ require("industryinfo.nut")
 SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
 SLStation <- SuperLib.Station;
+SLIndustry <- SuperLib.Industry;
 
 //Tile <- SuperLib.Tile
 
@@ -69,22 +70,38 @@ function Scheduler::TestFunction()
 	foreach(industry, _ in passindustry)
 	{
 		AILog.Info("Industry produces passengers: " + AIIndustry.GetName(industry) + " unvisited = " + IndustryInfo.Unvisited(industry, passcargo))
-	}
-	
+	}	
 }
 
-/* Check a vehicles orders to make sure they are valid */
+function Scheduler::SkipToNextOrder(vehicle)
+{
+	local orderposition = AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)
+	local nextorder = orderposition + 1
+	if(nextorder >= AIOrder.GetOrderCount(vehicle))
+		nextorder = 0
+	
+	AIOrder.SkipToOrder(vehicle, nextorder)
+}
+
+/* Check a vehicles orders to make sure they are valid.  Returns true if the route was updated */
 function Scheduler::CheckOrders(vehicle)
 {
 	//Scheduler.TestFunction()
 	
 	if(!Scheduler.CanVehicleBeScheduled(vehicle)) {
-		return
+		return false
 	}	
 	   
 	if(Scheduler.NeedsOrderScrub(vehicle))
 	{
 		Scheduler.ScrubOrders(vehicle, Scheduler.OrderHistoryLength)
+	}
+	
+	if(Scheduler.NeedsOrderSkip(vehicle))
+	{
+		/* Easiest to clear everything and let the AI figure out the next move */
+		AILog.Warning(VehicleInfo.ToString(vehicle) + " needed to skip an order.  Possibly trying to load at a station without supply")
+		Scheduler.ClearVehicleOrders(vehicle)		
 	}
 	
 	//AILog.Info("CheckOrders vehicle #" + vehicle.tostring())
@@ -122,8 +139,10 @@ function Scheduler::CheckOrders(vehicle)
 			
 		}
 		
-		return
+		return true
 	}
+	
+	return false
 	/*
 	else
 	{
@@ -136,13 +155,28 @@ function Scheduler::CheckOrders(vehicle)
 }
 
 
+function Scheduler::NeedsOrderSkip(vehicle)
+{
+	/*Sometimes an order was valid, but the game situation changes so the vehicle should move on.*/
+
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_AT_STATION)
+	{
+		if(Scheduler.CargoProducedAtTowns(SLVehicle.GetVehicleCargoType(vehicle)))
+		{
+			return false
+		}
+		
+		/* Perhaps the industry producing the cargo closed.  The train should move on in its order list */
+		if(VehicleInfo.WaitingToLoad(vehicle) && !VehicleInfo.CanLoad(vehicle))
+			return true
+	}	
+	
+	return false
+}
+
 
 function Scheduler::CanVehicleBeScheduled(vehicle)
-{
-	if(Scheduler.VehicleIsUserManaged(vehicle)) {
-		return false;
-	}
-	
+{ 
 	if(SLVehicle.GetVehicleCargoType(vehicle) == null){
 		AILog.Info(Vehicle.ToString(vehicle) + " has no valid cargo type. Skipping")
 		return false;
@@ -158,12 +192,6 @@ function Scheduler::CanVehicleBeScheduled(vehicle)
 	}
 	
 	return true; 
-}
-
-
-function Scheduler::VehicleIsUserManaged(vehicle)
-{
-	return AIGroup.GetName(AIVehicle.GetGroupID(vehicle)) != null
 }
 
 
@@ -234,8 +262,6 @@ function Scheduler::NeedsRouteUpdate(vehicle)
 			}
 		}	
 	}
-			
-	
 	
 	return false;
 }
@@ -246,9 +272,9 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_AT_STATION && AIVehicle.GetCargoLoad(vehicle, cargo) > 0)
 		return true
 	
-	//AILog.Info("Vehicle " + vehicle.tostring() + " loading = " + VehicleInfo.IsLoading(vehicle).tostring())
+	//AILog.Info("Vehicle " + vehicle.tostring() + " loading = " + VehicleInfo.CanLoad(vehicle).tostring())
 	
-	if(VehicleInfo.IsLoading(vehicle))
+	if(VehicleInfo.CanLoad(vehicle))
 	{
 		//Are we loading cargo at this station? If so find a destination
 		return true
@@ -355,6 +381,11 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 	
 	stationlist.Sort(AIList.SORT_BY_VALUE, AIList.SORT_ASCENDING) 
 	
+	
+	foreach(station, enroutecount in stationlist) 
+	{
+		AILog.Info("  " + enroutecount.tostring() + " units enroute to " + StationInfo.ToString(station))		
+	}
 	
 	/*
 	foreach(industry, stockpile in industrylist)
@@ -487,8 +518,8 @@ function RandListItem(list)
 	/* Return a random item from the list */
 	if(list.Count() == 0)
 		return null 
-	else if(list.Count() > 1)
-		AILog.Info(" !!!! Random choice being made!")
+	//else if(list.Count() > 1)
+		//AILog.Info(" !!!! Random choice being made!")
 		
 	local itemindex = AIBase.RandRange(list.Count())
 	list.Valuate(ToItem)
@@ -505,8 +536,8 @@ function RandListItem(list)
 		i++
 	}
 	
-	if(list.Count() > 1)
-		AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
+	//if(list.Count() > 1)
+		//AILog.Info(" I choose " + itemindex.tostring() + " " + chosen.tostring() )
 		
 	return chosen
 	
@@ -531,11 +562,17 @@ function Scheduler::RouteToDelivery(vehicle)
 	    AILog.Warning("Vehicle #" + vehicle.tostring() + " has nowhere to go!");
 	    return	
 	}
-	
-	
+		
 	//Lots of ways to decide which station to deliver to.  Try to spread the deliveries according to station congestion for now
 	local orderedStations = OrderStationsByDeliveryAttractiveness(acceptingstations, vehicle)
 	orderedStations = RemoveItemsNotMatchingFirstValue(orderedStations)
+	/*
+	AILog.Info("Winning delivery candidates")
+	foreach(station, _ in orderedStations)
+	{
+		AILog.Info("    " + StationInfo.ToString(station)) 
+	}
+	*/
 	
 	local deststation = RandListItem(orderedStations)
 	
@@ -587,10 +624,10 @@ function Scheduler::NeedsOrderScrub(vehicle)
 
 function Scheduler::ScrubOrders(vehicle, MaxOrders)
 {
-	AILog.Info("Scrubbing orders for " + VehicleInfo.ToString(vehicle));
+	//AILog.Info("Scrubbing orders for " + VehicleInfo.ToString(vehicle));
 	while(AIOrder.GetOrderCount(vehicle) > MaxOrders)
 	{ 
-		AILog.Info("  Removing order " + OrderToString(vehicle, 0));	
+//		AILog.Info("  Removing order " + OrderToString(vehicle, 0));	
 		AIOrder.RemoveOrder(vehicle, 0);
 	}	
 }

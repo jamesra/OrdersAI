@@ -142,13 +142,13 @@ function StationInfo::StationsWithSupply(station_type, cargo)
 	if(Scheduler.CargoProducedAtTowns(cargo))
 	{
 		foundstations = StationInfo.StationsWithTowns(station_type, cargo)
-		 
 	}
 	else
 	{
-		foundstations = AIStationList(station_type)
+		foundstations = IndustryInfo.StationsWithSupply(station_type, cargo)
+		/*foundstations = AIStationList(station_type)
 		foundstations.Valuate(SLStation.IsCargoSupplied, cargo)
-		foundstations.KeepValue(1)
+		foundstations.KeepValue(1)*/
 	}
 	
 	/* Check for stations that may have transfer cargo */
@@ -405,7 +405,7 @@ function StationInfo::GetLoadingReservedCargoCount(station, cargotype)
 	parkedvehicles.KeepValue(AIVehicle.VS_AT_STATION)
 	
 	if(parkedvehicles.Count() > 0) {
-		AILog.Info("Vehicles loading at " + StationInfo.VehiclesToStationString(station, parkedvehicles))
+		AILog.Info("    Vehicles loading at " + StationInfo.VehiclesToStationString(station, parkedvehicles))
 	}
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
@@ -431,7 +431,7 @@ function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
 		AILog.Warning("Error, enroute vehicles is null")
 	
 	if(enroutevehicles.Count() > 0) {
-		AILog.Info("Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
+		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
 	}  
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
@@ -455,7 +455,7 @@ function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 		AILog.Warning("Error, enroute vehicles is null")
 	
 	if(enroutevehicles.Count() > 0) {
-		AILog.Info("Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
+		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
 	}  
 	
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.

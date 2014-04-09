@@ -63,7 +63,7 @@ Future Work
 
 Weight distance and vehicle speed into decisions
 
-Support industry helicopter pads
+If a station stops supplying a cargo move waiting vehicles to the next station in the order list
 
 
 Random stuff
@@ -116,3 +116,9 @@ _
 _
 
 * Airport type taken into consideration.  No more jumbo jets being sent to heliports.
+
+7
+_
+
+* Vehicles are sent to a random station if there is a tie for best station weight
+* Vehicles loading at a station where the producing industry shuts down now move on correctly
