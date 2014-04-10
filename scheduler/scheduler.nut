@@ -420,7 +420,7 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 
 function Scheduler::GetTownPickupOrderFlags()
 {
-	local orderFlags = AIOrder.OF_NONE
+	local orderFlags = AIOrder.OF_NON_STOP_INTERMEDIATE 
 
     switch(OrdersAI.GetSetting("load_town_cargo"))
     {
@@ -438,7 +438,7 @@ function Scheduler::GetTownPickupOrderFlags()
 
 function Scheduler::GetCargoPickupOrderFlags()
 { 
-	local orderFlags = AIOrder.OF_NONE
+	local orderFlags = AIOrder.OF_NON_STOP_INTERMEDIATE 
 
     switch(OrdersAI.GetSetting("load_industry_cargo"))
     {
