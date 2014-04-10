@@ -418,6 +418,42 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 }
 
 
+function Scheduler::GetTownPickupOrderFlags()
+{
+	local orderFlags = AIOrder.OF_NONE
+
+    switch(OrdersAI.GetSetting("load_town_cargo"))
+    {
+    	case 0:
+    		return orderFlags
+        case 1:
+            return orderFlags | AIOrder.OF_FULL_LOAD_ANY;
+        case 2:
+            return orderFlags | AIOrder.OF_FULL_LOAD;
+        default:
+        	return orderFlags | AIOrder.OF_FULL_LOAD_ANY;
+    }  
+}
+
+
+function Scheduler::GetCargoPickupOrderFlags()
+{ 
+	local orderFlags = AIOrder.OF_NONE
+
+    switch(OrdersAI.GetSetting("load_industry_cargo"))
+    {
+    	case 0:
+    		return orderFlags
+        case 1:
+            return orderFlags | AIOrder.OF_FULL_LOAD_ANY;
+        case 2:
+            return orderFlags | AIOrder.OF_FULL_LOAD;
+        default:
+        	return orderFlags | AIOrder.OF_FULL_LOAD_ANY;
+    }  
+}
+
+
 /* I saw strange behaviour from SuperLib and NoAI API's with regards to correctly indicating if a station supplied passengers
    created dedicated function to hold the magic workarounds */
 function Scheduler::RouteToTownPickup(vehicle)
@@ -445,22 +481,8 @@ function Scheduler::RouteToTownPickup(vehicle)
 		
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
 		
-        local orderFlags = AIOrder.OF_NONE
 
-        switch(OrdersAI.GetSetting("load_cargo"))
-        {
-            case 0:
-                // AIOrder.OF_NONE
-                break
-            case 1:
-                orderFlags = orderFlags | AIOrder.OF_FULL_LOAD_ANY;
-                break
-            case 2:
-                orderFlags = orderFlags | AIOrder.OF_FULL_LOAD;
-                break
-        }
-
-		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), orderFlags);
+		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), Scheduler.GetTownPickupOrderFlags());
 
 		/*
 		foreach( station, _ in orderedStations)
@@ -513,7 +535,7 @@ function Scheduler::RouteToCargoPickup(vehicle)
 		
 		local chosenStation = NearestStation(orderedStations, vehicle)
 		
-		Scheduler.DispatchToStation(vehicle, chosenStation, AIOrder.OF_FULL_LOAD_ANY);
+		Scheduler.DispatchToStation(vehicle, chosenStation, Scheduler.GetCargoPickupOrderFlags());
 		
 		
 		/*
@@ -694,7 +716,7 @@ function Scheduler::DispatchToStation(vehicle, station, flags)
 {
 	AILog.Info("Dispatching " + VehicleInfo.ToString(vehicle) + " to " + StationInfo.ToString(station));
 	
-	AIOrder.AppendOrder(vehicle, AIStation.GetLocation(station), flags);
+	AIOrder.AppendOrder(vehicle, AIStation.GetLocation(station), flags)
 	
 	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING) {
 		AIOrder.SkipToOrder(vehicle, AIOrder.GetOrderCount(vehicle)-1);
