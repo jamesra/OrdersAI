@@ -185,7 +185,7 @@ function OrdersAI::GetEvents()
 	while (AIEventController.IsEventWaiting()) {
 		local e = AIEventController.GetNextEvent();
 		switch (e.GetEventType()) {				
-			case AIEvent.AIEventVehicleWaitingInDepot:
+			case AIEvent.ET_VEHICLE_WAITING_IN_DEPOT:
 				//Organizer.AssignVehicleToGroup(e.GetVehicleID());
 				break; 
 		}
