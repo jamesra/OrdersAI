@@ -445,7 +445,23 @@ function Scheduler::RouteToTownPickup(vehicle)
 		
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
 		
-		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), AIOrder.OF_FULL_LOAD_ANY);
+        local orderFlags = AIOrder.OF_NONE
+
+        switch(OrdersAI.GetSetting("load_cargo"))
+        {
+            case 0:
+                // AIOrder.OF_NONE
+                break
+            case 1:
+                orderFlags = orderFlags | AIOrder.OF_FULL_LOAD_ANY;
+                break
+            case 2:
+                orderFlags = orderFlags | AIOrder.OF_FULL_LOAD;
+                break
+        }
+
+		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), orderFlags);
+
 		/*
 		foreach( station, _ in orderedStations)
 		{
