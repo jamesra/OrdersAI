@@ -129,3 +129,6 @@ _
 _
 
 * If pickup stations have equal weight, route to the nearest station
+* non-stop flag added to pickup orders
+* option to specify load flags for passengers and cargo
+* Stations with a rating below a minimum amount do not have available supply considered
