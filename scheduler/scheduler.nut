@@ -345,7 +345,7 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
     {
         score = supplyweight * ratingweight
     }
-	return (score * 100.0).tointeger()
+	return ((score + 0.005) * 100.0).tointeger()
 }
 
 /* Given a list of stations, orders the list according to the best station to visit */
