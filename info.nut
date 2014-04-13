@@ -26,7 +26,7 @@ class OrdersAI extends AIInfo {
 	function MinVersionToLoad() { return 1; }
 	function GetDate()          { return "2014-03-20"; }
 	function CreateInstance()   { return "OrdersAI"; }
-	function GetAPIVersion()    { return "1.3"; }
+	function GetAPIVersion()    { return "1.4"; }
 	function UseAsRandomAI()    { return false; }
 	function GetSettings() {
 		//AddSetting({name = "use_busses", description = "Enable busses", easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, flags = AICONFIG_BOOLEAN});
