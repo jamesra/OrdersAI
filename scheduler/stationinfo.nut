@@ -83,11 +83,11 @@ function StationInfo::PrintCargoList(stations, cargo)
 
 function StationInfo::StationUnvisited(station, cargo)
 {
-	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
+	if(AIStation.HasCargoRating(station, cargo)){
 		return false
 	}
 	
-	if(AIStation.HasCargoRating(station, cargo)){
+	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
 		return false
 	}
 	
