@@ -71,6 +71,17 @@ function StationInfo::StationCargoString(station, cargo)
 	return output;
 }
 
+
+function StationInfo::PrintStationList(stations)
+{
+	foreach( station, _ in stations)
+	{
+		//local cargowaiting = AIStation.GetCargoWaiting(station, cargo); 
+		AILog.Info("    " + StationInfo.StationCargoString(station, cargo) + " @ " + StationInfo.ToString(station));
+	}
+}
+
+
 function StationInfo::PrintCargoList(stations, cargo)
 {
 	foreach( station, rating in stations)
@@ -87,11 +98,41 @@ function StationInfo::StationUnvisited(station, cargo)
 		return false
 	}
 	
+	/*
 	if(StationInfo.NumVehiclesEnrouteToStation(station, cargo) > 0) {
+		return false
+	}*/
+	
+	if(StationInfo.NumVehiclesScheduledToStation(station, cargo) > 0) {
 		return false
 	}
 	
+	AILog.Info("  " + StationInfo.ToString(station) + " is unvisited for " + AICargo.GetCargoLabel(cargo))
+
 	return true
+}
+
+function StationInfo::NumVehiclesScheduledToStation(station, cargo)
+{
+	/* Vehicles which will be visiting the station with cargo type */
+    local scheduled_vehicles = AIVehicleList_Station(station)
+    
+    AILog.Info("All vehicles scheduled to " + StationInfo.ToString(station))
+    VehicleInfo.PrintList(scheduled_vehicles)
+    
+    scheduled_vehicles.Valuate(VehicleInfo.NextDestination)
+    scheduled_vehicles.KeepValue(station)
+    
+    AILog.Info("All vehicles with next destiation set to " + StationInfo.ToString(station))
+    VehicleInfo.PrintList(scheduled_vehicles)
+    
+    scheduled_vehicles.Valuate(SLVehicle.GetVehicleCargoType)
+    scheduled_vehicles.KeepValue(cargo)
+    
+    AILog.Info("All vehicles with correct cargo and next destiation set to " + StationInfo.ToString(station))
+    VehicleInfo.PrintList(scheduled_vehicles)
+    
+    return scheduled_vehicles.Count()
 }
 
 /* Stations with an existing stockpile of cargo */

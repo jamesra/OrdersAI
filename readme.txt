@@ -132,3 +132,12 @@ _
 * non-stop flag added to pickup orders
 * option to specify load flags for passengers and cargo
 * Stations with a rating below a minimum amount do not have available supply considered
+
+9
+_
+
+* Fixed non-stop orders preventing Airplanes and Boats from getting orders OpenTTD would respond to
+* New stations check whether any vehicles are scheduled to visit after the current station or 
+  actively running to the station.  This should prevent multiple vehicles from visiting new 
+  stations
+* 
