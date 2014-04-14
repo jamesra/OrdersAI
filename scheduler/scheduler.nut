@@ -418,9 +418,15 @@ function OrderStationsByDeliveryAttractiveness(stationlist, vehicle)
 }
 
 
-function Scheduler::GetTownPickupOrderFlags()
+function Scheduler::GetTownPickupOrderFlags(vehicle)
 {
 	local orderFlags = AIOrder.OF_NON_STOP_INTERMEDIATE 
+	
+	if(AIVehicle.GetVehicleType(vehicle) == AIVehicle.VT_AIR ||
+	   AIVehicle.GetVehicleType(vehicle) == AIVehicle.VT_WATER)
+	{
+		orderFlags = AIOrder.OF_NONE
+	}
 
     switch(OrdersAI.GetSetting("load_town_cargo"))
     {
@@ -436,9 +442,15 @@ function Scheduler::GetTownPickupOrderFlags()
 }
 
 
-function Scheduler::GetCargoPickupOrderFlags()
+function Scheduler::GetCargoPickupOrderFlags(vehicle)
 { 
 	local orderFlags = AIOrder.OF_NON_STOP_INTERMEDIATE 
+	
+	if(AIVehicle.GetVehicleType(vehicle) == AIVehicle.VT_AIR ||
+	   AIVehicle.GetVehicleType(vehicle) == AIVehicle.VT_WATER)
+	{
+		orderFlags = AIOrder.OF_NONE
+	}
 
     switch(OrdersAI.GetSetting("load_industry_cargo"))
     {
@@ -482,7 +494,7 @@ function Scheduler::RouteToTownPickup(vehicle)
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
 		
 
-		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), Scheduler.GetTownPickupOrderFlags());
+		Scheduler.DispatchToStation(vehicle, orderedStations.Begin(), Scheduler.GetTownPickupOrderFlags(vehicle));
 
 		/*
 		foreach( station, _ in orderedStations)
@@ -535,7 +547,7 @@ function Scheduler::RouteToCargoPickup(vehicle)
 		
 		local chosenStation = NearestStation(orderedStations, vehicle)
 		
-		Scheduler.DispatchToStation(vehicle, chosenStation, Scheduler.GetCargoPickupOrderFlags());
+		Scheduler.DispatchToStation(vehicle, chosenStation, Scheduler.GetCargoPickupOrderFlags(vehicle));
 		
 		
 		/*

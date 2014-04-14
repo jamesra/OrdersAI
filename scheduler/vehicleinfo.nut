@@ -31,6 +31,15 @@ function VehicleInfo::ToString(vehicle)
 	return "Vehicle #" + vehicle.tostring() + " " + AIVehicle.GetName(vehicle);	
 }
 
+function VehicleInfo::PrintList(vehicles)
+{
+	foreach(vehicle, _ in vehicles)
+	{
+		AILog.Info("    Vehicle #" + vehicle.tostring() + " " + AIVehicle.GetName(vehicle))
+	}
+}
+
+
 
 /* Returns the station type for the vehicle */
 function VehicleInfo::GetVehicleStationType(vehicle)
@@ -122,7 +131,7 @@ function VehicleInfo::HasCargo(vehicle)
 
 function VehicleInfo::Destination(vehicle)
 {
-	/*Returns the station the vehicle is travelling to*/
+	/*Returns the station the vehicle is travelling to with current order*/
 	local order_index = AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)
 	//AILog.Info(VehicleInfo.ToString(vehicle) + " order index #" + order_index.tostring())
 	local dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, order_index))
@@ -130,6 +139,32 @@ function VehicleInfo::Destination(vehicle)
 	if(dest_station == null)
 		throw (AIError.GetLastErrorString())
 	return dest_station
+}
+
+function VehicleInfo::NextDestination(vehicle)
+{
+	/*Returns the station the vehicle is travelling to after the current order*/
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
+	{
+		return VehicleInfo.Destination(vehicle)
+	}
+	else
+	{
+		local order_index = AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)
+		order_index++
+		
+		if(AIOrder.GetOrderCount(vehicle) >= order_index)
+		{
+			return VehicleInfo.Destination(vehicle)
+		}
+		
+		//AILog.Info(VehicleInfo.ToString(vehicle) + " order index #" + order_index.tostring())
+		local dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, order_index))
+		//AILog.Info(VehicleInfo.ToString(vehicle) + " enroute to " + StationInfo.ToString(dest_station))
+		if(dest_station == null)
+			throw (AIError.GetLastErrorString())
+		return dest_station
+	}
 }
 
 function VehicleInfo::CanLoadAtDestination(vehicle)
