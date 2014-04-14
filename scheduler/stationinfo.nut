@@ -120,7 +120,7 @@ function StationInfo::NumVehiclesScheduledToStation(station, cargo)
     AILog.Info("All vehicles scheduled to " + StationInfo.ToString(station))
     VehicleInfo.PrintList(scheduled_vehicles)
     
-    scheduled_vehicles.Valuate(VehicleInfo.NextDestination)
+    scheduled_vehicles.Valuate(VehicleInfo.NextStationScheduled)
     scheduled_vehicles.KeepValue(station)
     
     AILog.Info("All vehicles with next destiation set to " + StationInfo.ToString(station))
