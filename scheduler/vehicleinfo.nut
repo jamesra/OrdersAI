@@ -131,7 +131,8 @@ function VehicleInfo::HasCargo(vehicle)
 
 function VehicleInfo::Destination(vehicle)
 {
-	/*Returns the station the vehicle is travelling to with current order*/
+	/*Returns the station specified by the current order*/
+	
 	local order_index = AIOrder.ResolveOrderPosition(vehicle, AIOrder.ORDER_CURRENT)
 	//AILog.Info(VehicleInfo.ToString(vehicle) + " order index #" + order_index.tostring())
 	local dest_station = AIStation.GetStationID(AIOrder.GetOrderDestination(vehicle, order_index))
@@ -141,9 +142,9 @@ function VehicleInfo::Destination(vehicle)
 	return dest_station
 }
 
-function VehicleInfo::NextDestination(vehicle)
+function VehicleInfo::NextStationScheduled(vehicle)
 {
-	/*Returns the station the vehicle is travelling to after the current order*/
+	/*Returns the station the vehicle will arrive at.  Ignore current station if already at a station*/
 	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
 	{
 		return VehicleInfo.Destination(vehicle)
