@@ -332,19 +332,21 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
 	local ratingweight = Scheduler.GetRatingWeight(station, cargotype) 
     local supplyweight = Scheduler.GetSupplyWeight(station, vehicle, cargotype)
     local min_ratingweight = 1 - (OrdersAI.GetSetting("min_rating") / 100.0)
-    local output = "ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
+    local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
     AILog.Info(output)
 	local score = 0
 
-    if(ratingweight > min_ratingweight && supplyweight > 0)
+    if(ratingweight > min_ratingweight && supplyweight < 1)
     {
-        AILog.Info("bad service rate, allowed min." + ((1 - min_ratingweight) * 100).tostring() + "%, ignoring supply")
-        score = ratingweight
+        AILog.Info("  bad service rate, allowed min. " + ((1 - min_ratingweight) * 100).tostring() + "%, ignoring supply")
+
+        // avoid a rush of vehicles to the station:
+        // lower score the more vehicles are scheduled to the station
+        local vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype) + 1
+        supplyweight = 1.5 / vehicles
     }
-    else
-    {
-        score = supplyweight * ratingweight
-    }
+
+    score = supplyweight * ratingweight
 	return (score * 100.0).tointeger()
 }
 
