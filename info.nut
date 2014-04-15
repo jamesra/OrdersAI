@@ -53,6 +53,7 @@ class OrdersAI extends AIInfo {
             _1 = "Full load any cargo",
             _2 = "Full load all cargo"
         });
+        AddSetting({name = "order_history_depth", description = "Number of old orders to keep in the vehicles schedule for informational purposes", min_value = 0, max_value = 10, easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1, flags = AICONFIG_INGAME});
 	}
 };
 

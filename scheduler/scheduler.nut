@@ -33,7 +33,7 @@ SLIndustry <- SuperLib.Industry;
 
 class Scheduler
 {
-	static OrderHistoryLength = 3
+	//static OrderHistoryLength = 3
 	
 	static function VehicleIsUserManaged(vehicle);
 	
@@ -57,6 +57,11 @@ class Scheduler
 	
 };
 
+
+function Scheduler::OrderHistoryDepth()
+{
+	return OrdersAI.GetSetting("order_history_depth") + 1
+}
 
 
 function Scheduler::TestFunction()
@@ -94,7 +99,7 @@ function Scheduler::CheckOrders(vehicle)
 	   
 	if(Scheduler.NeedsOrderScrub(vehicle))
 	{
-		Scheduler.ScrubOrders(vehicle, Scheduler.OrderHistoryLength)
+		Scheduler.ScrubOrders(vehicle, Scheduler.OrderHistoryDepth())
 	}
 	
 	if(Scheduler.NeedsOrderSkip(vehicle))
@@ -312,7 +317,7 @@ function Scheduler::GetRatingWeight(station, cargo)
 	}
 	else
 	{
-		return ServiceRatingToWeight(0.5)
+		return ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
 	}
 }
 
@@ -351,20 +356,32 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
     local min_ratingweight = ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
     //local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
     //AILog.Info(output)
-	local score = 0
+	local score = supplyweight * ratingweight
 
     //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight)
-    if(ratingweight > min_ratingweight && supplyweight < 1)
+    if(ratingweight >= min_ratingweight)
     {
         AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + WeightToServiceRating(ratingweight).tostring() + "%, allowed min." + WeightToServiceRating(min_ratingweight).tostring() + "%, ignoring supply")
 
         // avoid a rush of vehicles to the station:
         // lower score the more vehicles are scheduled to the station
-        local vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype) + 1
-        supplyweight = 1.5 / vehicles
-	}
-
-    score = supplyweight * ratingweight
+        local num_vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype)
+        if(num_vehicles == 0)
+        {
+        	score = ratingweight
+        }
+        else 
+        {
+        	if(StationInfo.StationUnvisited(station, cargotype))
+        	{
+        		return 0
+        	}
+        	else
+        	{
+        		score = ratingweight * (1.5 / (num_vehicles+1))
+        	}
+        }
+	} 
 
 	return (score * 100.0).tointeger()
 }
@@ -633,7 +650,6 @@ function Scheduler::RouteToDelivery(vehicle)
 	
 	local deststation = RandListItem(orderedStations)
 	
-	
 	Scheduler.DispatchToStation(vehicle, deststation, AIOrder.OF_NONE);
 	/*
 	foreach( station, _ in orderedStations)
@@ -735,7 +751,7 @@ function Scheduler::NeedsOrderScrub(vehicle)
 		return false; 
 	}
 	
-	if(AIOrder.GetOrderCount(vehicle) > Scheduler.OrderHistoryLength){
+	if(AIOrder.GetOrderCount(vehicle) > Scheduler.OrderHistoryDepth()){
 		return true;
 	}
 		
