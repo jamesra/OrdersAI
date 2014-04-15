@@ -349,8 +349,8 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
 	local ratingweight = Scheduler.GetRatingWeight(station, cargotype) 
     local supplyweight = Scheduler.GetSupplyWeight(station, vehicle, cargotype)
     local min_ratingweight = ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
-    local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
-    AILog.Info(output)
+    //local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
+    //AILog.Info(output)
 	local score = 0
 
     //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight)
