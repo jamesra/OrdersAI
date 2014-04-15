@@ -312,7 +312,7 @@ function Scheduler::GetRatingWeight(station, cargo)
 	}
 	else
 	{
-		return ServiceRatingToWeight(0.5)
+		return 0.5
 	}
 }
 
