@@ -359,7 +359,7 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
 	local score = 0
 
     //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight)
-    if(ratingweight > min_ratingweight)
+    if(ratingweight > min_ratingweight && supplyweight < 1)
     {
         AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + WeightToServiceRating(ratingweight).tostring() + "%, allowed min." + WeightToServiceRating(min_ratingweight).tostring() + "%, ignoring supply")
 
