@@ -317,7 +317,7 @@ function Scheduler::GetRatingWeight(station, cargo)
 	}
 	else
 	{
-		return ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
+		return ServiceRatingToWeight(OrdersAI.GetSetting("min_rating")-1)
 	}
 }
 
@@ -356,32 +356,20 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
     local min_ratingweight = ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
     //local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
     //AILog.Info(output)
-	local score = supplyweight * ratingweight
+	local score = 0
 
     //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight)
-    if(ratingweight >= min_ratingweight)
+    if(ratingweight > min_ratingweight)
     {
         AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + WeightToServiceRating(ratingweight).tostring() + "%, allowed min." + WeightToServiceRating(min_ratingweight).tostring() + "%, ignoring supply")
 
         // avoid a rush of vehicles to the station:
         // lower score the more vehicles are scheduled to the station
         local num_vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype)
-        if(num_vehicles == 0)
-        {
-        	score = ratingweight
-        }
-        else 
-        {
-        	if(StationInfo.StationUnvisited(station, cargotype))
-        	{
-        		return 0
-        	}
-        	else
-        	{
-        		score = ratingweight * (1.5 / (num_vehicles+1))
-        	}
-        }
+        supplyweight = 1.5 / (num_vehicles + 1)
 	} 
+	
+	score = supplyweight * ratingweight
 
 	return (score * 100.0).tointeger()
 }
@@ -765,7 +753,7 @@ function Scheduler::ScrubOrders(vehicle, MaxOrders)
 	{ 
 //		AILog.Info("  Removing order " + OrderToString(vehicle, 0));	
 		AIOrder.RemoveOrder(vehicle, 0);
-	}	
+	}
 }
 
 function Scheduler::DispatchToStation(vehicle, station, flags)
