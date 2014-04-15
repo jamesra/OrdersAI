@@ -117,20 +117,20 @@ function StationInfo::NumVehiclesScheduledToStation(station, cargo)
 	/* Vehicles which will be visiting the station with cargo type */
     local scheduled_vehicles = AIVehicleList_Station(station)
     
-    AILog.Info("All vehicles scheduled to " + StationInfo.ToString(station))
-    VehicleInfo.PrintList(scheduled_vehicles)
+   // AILog.Info("All vehicles scheduled to " + StationInfo.ToString(station))
+   // VehicleInfo.PrintList(scheduled_vehicles)
     
     scheduled_vehicles.Valuate(VehicleInfo.NextStationScheduled)
     scheduled_vehicles.KeepValue(station)
     
-    AILog.Info("All vehicles with next destiation set to " + StationInfo.ToString(station))
-    VehicleInfo.PrintList(scheduled_vehicles)
+   // AILog.Info("All vehicles with next destiation set to " + StationInfo.ToString(station))
+   // VehicleInfo.PrintList(scheduled_vehicles)
     
     scheduled_vehicles.Valuate(SLVehicle.GetVehicleCargoType)
     scheduled_vehicles.KeepValue(cargo)
     
-    AILog.Info("All vehicles with correct cargo and next destiation set to " + StationInfo.ToString(station))
-    VehicleInfo.PrintList(scheduled_vehicles)
+    //AILog.Info("All vehicles with correct cargo and next destiation set to " + StationInfo.ToString(station))
+    //VehicleInfo.PrintList(scheduled_vehicles)
     
     return scheduled_vehicles.Count()
 }
@@ -382,9 +382,10 @@ function StationInfo::IsCargoAccepted(station, cargo)
 function  StationInfo::_IsVehicleTravellingToStation(vehicle, station)
 {
 	/*Return true if the vehicle is actively running towards the station*/
-	if(AIVehicle.GetState(vehicle) != AIVehicle.VS_RUNNING)
+	if(!(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING ||
+	   AIVehicle.GetState(vehicle) == AIVehicle.VS_BROKEN))
 	{
-		return false;
+		return false
 	}
 	
 	local v_dest_station = VehicleInfo.Destination(vehicle)
