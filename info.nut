@@ -39,6 +39,7 @@ class OrdersAI extends AIInfo {
 		//AddSetting({name = "build_bus_dtrs", description = "Build drive-through stops for busses", easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, flags = AICONFIG_BOOLEAN});
 		//AddSetting({name = "debug_signs", description = "Enable building debug signs", easy_value = 0, medium_value = 0, hard_value = 0, custom_value = 0, flags = AICONFIG_BOOLEAN});
 		AddSetting({name = "min_rating", description = "Minimum service rate in percent to consider available cargo", min_value = 0, max_value = 100, easy_value = 30, medium_value = 30, hard_value = 30, custom_value = 30, step_size = 5, flags = AICONFIG_INGAME});
+		AddSetting({name = "good_enough_rating", description = "Good enough station service rate in percent.  Stations rated above this value are weighted equally.  ", min_value = 5, max_value = 100, easy_value = 65, medium_value = 60, hard_value = 60, custom_value = 60, step_size = 5, flags = AICONFIG_INGAME});
 		AddSetting({name = "load_town_cargo", description = "Town cargo load orders", min_value = 0, max_value = 2, easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, flags = AICONFIG_INGAME});
         AddLabels("load_town_cargo", {
             _0 = "Load if available",

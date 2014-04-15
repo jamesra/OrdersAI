@@ -284,18 +284,35 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 }
 
 
+function ServiceRatingToWeight(rating)
+{
+	return 1.0 - (rating / 100.0)
+}
+
+function WeightToServiceRating(weight)
+{
+	return (1.0 - weight) * 100.0	
+}
+
+
 /* Returns a scalar from 0.0 to 1.0. Lower ratings return a higher scalar */
 function Scheduler::GetRatingWeight(station, cargo)
 {
 	if(AIStation.HasCargoRating(station, cargo)) 
 	{
-		local weight = 1.0 - (AIStation.GetCargoRating(station, cargo) / 100.0)
-		//weight *= weight
+		local weight = ServiceRatingToWeight(AIStation.GetCargoRating(station, cargo))
+		local good_enough_weight = ServiceRatingToWeight(OrdersAI.GetSetting("good_enough_rating"))
+		//The logic looks reversed because weights are reversed.  
+		if (weight < good_enough_weight)
+		{
+			weight = good_enough_weight
+		}
+		
 		return weight
 	}
 	else
 	{
-		return 0.5
+		return ServiceRatingToWeight(0.5)
 	}
 }
 
@@ -331,22 +348,24 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
 {	
 	local ratingweight = Scheduler.GetRatingWeight(station, cargotype) 
     local supplyweight = Scheduler.GetSupplyWeight(station, vehicle, cargotype)
-    local min_ratingweight = 1 - (OrdersAI.GetSetting("min_rating") / 100.0)
-    local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
-    AILog.Info(output)
+    local min_ratingweight = ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
+    //local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
+    //AILog.Info(output)
 	local score = 0
 
+    //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight)
     if(ratingweight > min_ratingweight && supplyweight < 1)
     {
-        AILog.Info("  bad service rate, allowed min. " + ((1 - min_ratingweight) * 100).tostring() + "%, ignoring supply")
+        AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + WeightToServiceRating(ratingweight).tostring() + "%, allowed min." + WeightToServiceRating(min_ratingweight).tostring() + "%, ignoring supply")
 
         // avoid a rush of vehicles to the station:
         // lower score the more vehicles are scheduled to the station
         local vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype) + 1
         supplyweight = 1.5 / vehicles
-    }
+	}
 
     score = supplyweight * ratingweight
+
 	return (score * 100.0).tointeger()
 }
 
@@ -547,7 +566,14 @@ function Scheduler::RouteToCargoPickup(vehicle)
 		local orderedStations = OrderStationsByPickupAttractiveness(stockpilestations, vehicle);
 		orderedStations = RemoveItemsNotMatchingFirstValue(orderedStations)
 		
-		local chosenStation = NearestStation(orderedStations, vehicle)
+		local chosenStation = orderedStations.Begin()
+		if(orderedStations.Count() > 1)
+		{
+			AILog.Info("Candidate pickup stations with equal weight")
+			//StationInfo.PrintStationList(orderedStations)
+			chosenStation = NearestStation(orderedStations, vehicle)
+		}
+		
 		
 		Scheduler.DispatchToStation(vehicle, chosenStation, Scheduler.GetCargoPickupOrderFlags(vehicle));
 		

@@ -140,4 +140,15 @@ _
 * New stations check whether any vehicles are scheduled to visit after the current station or 
   actively running to the station.  This should prevent multiple vehicles from visiting new 
   stations
-* 
+
+10
+__
+
+* Added a "Good enough" service rating threshold defaulting to 60%.  Stations with service ratings
+  above this threshold are assigned equal service weights.  If all stations have good ratings and
+  sufficient cargo to pickup there is a tie.  The scheduler continues to break a pickup tie by 
+  sending the vehicle to the closest station according to manhattan distance. 
+* Changed behavior of "Minimum service rating" to provide an equally high score once the minimum threshold is set. 
+  This is good because if there are multiple low rated stations vehicles will be dispatched to the nearest station
+  for a pickup.  Nearest station dispatch applies to cargo only.  May apply to passengers later. 
+* Fixed an issue where large planes were still considering heliports a valid destination.

@@ -77,7 +77,7 @@ function StationInfo::PrintStationList(stations)
 	foreach( station, _ in stations)
 	{
 		//local cargowaiting = AIStation.GetCargoWaiting(station, cargo); 
-		AILog.Info("    " + StationInfo.StationCargoString(station, cargo) + " @ " + StationInfo.ToString(station));
+		AILog.Info("    " + StationInfo.ToString(station));
 	}
 }
 
@@ -276,17 +276,32 @@ function StationInfo::IsValidStationForVehicle(station, vehicle)
 
 function AirportValidForSmallPlane(airporttype)
 {
+	/*
+	AILog.Info("My airport type: " + airporttype.tostring())
+	AILog.Info("  AT_HELIPORT: " +  AIAirport.AT_HELIPORT.tostring())
+	AILog.Info("  AT_HELISTATION: " + AIAirport.AT_HELISTATION.tostring())
+	AILog.Info("  AT_HELIDEPOT: " + AIAirport.AT_HELIDEPOT.tostring())
+	*/
+	
 	if(airporttype == AIAirport.AT_HELIPORT || 
 			   airporttype == AIAirport.AT_HELISTATION ||
-			   airporttype == AIAirport.AT_HELIDEPOT)
+			   airporttype == AIAirport.AT_HELIDEPOT)	
+	{
 			   return false
+	}
 			   
 	return true
 }
 
 function AirportValidForBigPlane(airporttype)
 {
-	if(!AirportValidForSmallPlane)
+	/*
+	AILog.Info("My airport type: " + airporttype.tostring())
+	AILog.Info("  AT_SMALL: " +  AIAirport.AT_SMALL.tostring())
+	AILog.Info("  AT_LARGE: " + AIAirport.AT_LARGE.tostring()) 
+	*/
+	
+	if(!AirportValidForSmallPlane(airporttype))
 		return false
 		
 	if(airporttype == AIAirport.AT_SMALL ||
@@ -308,22 +323,41 @@ function StationInfo::CanAircraftUseAirport(station, vehicle)
 		return false
 	}
 	
-	if( planetype == AIAirport.AT_INVALID)
+	if(planetype == AIAirport.AT_INVALID)
 	{
 		return false
 	}
 	
+	/*
+	AILog.Info("My Plane type: " + planetype.tostring())
+	AILog.Info("Heli: " + AIAirport.PT_HELICOPTER.tostring())
+	AILog.Info("Small: " + AIAirport.PT_SMALL_PLANE.tostring())
+	AILog.Info("Big: " + AIAirport.PT_BIG_PLANE.tostring())
+	*/
+	
+	local valid = false
 	switch(planetype)
 	{
 		case AIAirport.PT_HELICOPTER:
-			return true	
+			valid = true
+			break;
 		case AIAirport.PT_SMALL_PLANE:
-			return AirportValidForSmallPlane(airporttype)
+			valid = AirportValidForSmallPlane(airporttype)
+			break; 
 		case AIAirport.PT_BIG_PLANE:
-			return AirportValidForBigPlane(airporttype)
+			valid = AirportValidForBigPlane(airporttype)
+			break; 
+		default: 
+			valid = AirportValidForBigPlane(airporttype)
+			AILog.Warning("Unknown plane type: " + planetype.tostring())
+			break;
 	}
 	
-	return true
+	/*if(valid)
+		AILog.Info("  " + StationInfo.ToString(station) + " airport type " + airporttype.tostring() + " is valid airport for " + VehicleInfo.ToString(vehicle))	
+	*/
+	
+	return valid
 }
 
 
@@ -490,7 +524,7 @@ function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
 
 function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 {
-	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles already scheduled to visit, or already visiting and loading*/
+	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles actively running to the station or already visiting and loading*/
 	local enroutevehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
 	if(enroutevehicles == null)
 		AILog.Warning("Error, enroute vehicles is null")
