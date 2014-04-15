@@ -145,7 +145,8 @@ function VehicleInfo::Destination(vehicle)
 function VehicleInfo::NextStationScheduled(vehicle)
 {
 	/*Returns the station the vehicle will arrive at.  Ignore current station if already at a station*/
-	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING)
+	if(AIVehicle.GetState(vehicle) == AIVehicle.VS_RUNNING || 
+	   AIVehicle.GetState(vehicle) == AIVehicle.VS_BROKEN )
 	{
 		return VehicleInfo.Destination(vehicle)
 	}
