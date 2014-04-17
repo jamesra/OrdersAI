@@ -10,12 +10,18 @@ class VehicleInfo
 	
 	static function GetAircraftType(vehicle);
 	
+    static function GetYearsLeft(vehicle);
+
+    static function IsYearsLeftReached(vehicle);
+
 	static function NoValidOrders(vehicle);
 	
 	static function LastOrderIsCompleted(vehicle);
 	
 	static function IsEmpty(vehicle);
 	
+    static function IsStoppedAtDepot(vehicle);
+
 	static function HasCargo(vehicle);
 	
 	static function Destination(vehicle);
@@ -96,6 +102,24 @@ function VehicleInfo::WaitingToLoad(vehicle)
 
 
 
+function VehicleInfo::GetYearsLeft(vehicle)
+{
+    // age left returned in days
+    local daysleft = AIVehicle.GetAgeLeft(vehicle)
+    //AILog.Info(VehicleInfo.ToString(vehicle) + " has " + daysleft.tostring() + " days left")
+    return (daysleft / 365)
+}
+
+function VehicleInfo::IsYearsLeftReached(vehicle)
+{
+    local yearsleft = VehicleInfo.GetYearsLeft(vehicle).tointeger()
+    if(yearsleft < OrdersAI.GetSetting("vehicle_years_left"))
+    {
+        return true;
+    }
+    return false;
+}
+
 function VehicleInfo::NoValidOrders(vehicle)
 {
 	local VehicleOrderCount = AIOrder.GetOrderCount(vehicle)
@@ -123,6 +147,16 @@ function VehicleInfo::IsEmpty(vehicle)
 {
 	local cargotype = SLVehicle.GetVehicleCargoType(vehicle);
 	return AIVehicle.GetCargoLoad(vehicle, cargotype) == 0;
+}
+
+function VehicleInfo::IsStoppedAtDepot(vehicle)
+{
+    if(AIOrder.IsGotoDepotOrder(vehicle, AIOrder.ORDER_CURRENT) ||
+        AIVehicle.GetState == AIVehicle.VS_IN_DEPOT)
+    {
+        return true;
+    }
+    return false;
 }
 
 function VehicleInfo::HasCargo(vehicle)
@@ -223,4 +257,3 @@ function VehicleInfo::GetTotalCargoReservation(vehicle_list, cargotype)
 	}
 	
 	return totalReservation
-}
