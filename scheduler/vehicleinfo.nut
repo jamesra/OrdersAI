@@ -23,6 +23,8 @@ class VehicleInfo
 	static function CanLoadAtDestination(vehicle);
 	
 	static function CanUnloadAtDestination(vehicle);
+	
+	static function GetTotalCargoReservation(vehicle_list, cargotype);
 };
 
 
@@ -200,4 +202,25 @@ function VehicleInfo::CanUnloadAtDestination(vehicle)
 	
 	//AILog.Info(VehicleInfo.ToString(vehicle) + " can unload at destination " + StationInfo.ToString(DestinationStation) + " = " + CanUnload.tostring())
 	return CanUnload
+}
+
+
+function VehicleInfo::GetTotalCargoReservation(vehicle_list, cargotype)
+{
+	/*Returns the total amount of cargo the vehicles in the list can load*/
+	if(vehicle_list == null)
+	{
+		AILog.Warning("!!! Error, GetTotalCargoReservation vehicle list is null !!!")
+		return 0
+	} 
+	
+	vehicle_list.Valuate(AIVehicle.GetCapacity, cargotype)
+	
+	local totalReservation = 0
+	foreach (v, capacity in vehicle_list) 
+	{
+		totalReservation += capacity
+	}
+	
+	return totalReservation
 }

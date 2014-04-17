@@ -112,28 +112,6 @@ function StationInfo::StationUnvisited(station, cargo)
 	return true
 }
 
-function StationInfo::NumVehiclesScheduledToStation(station, cargo)
-{
-	/* Vehicles which will be visiting the station with cargo type */
-    local scheduled_vehicles = AIVehicleList_Station(station)
-    
-   // AILog.Info("All vehicles scheduled to " + StationInfo.ToString(station))
-   // VehicleInfo.PrintList(scheduled_vehicles)
-    
-    scheduled_vehicles.Valuate(VehicleInfo.NextStationScheduled)
-    scheduled_vehicles.KeepValue(station)
-    
-   // AILog.Info("All vehicles with next destiation set to " + StationInfo.ToString(station))
-   // VehicleInfo.PrintList(scheduled_vehicles)
-    
-    scheduled_vehicles.Valuate(SLVehicle.GetVehicleCargoType)
-    scheduled_vehicles.KeepValue(cargo)
-    
-    //AILog.Info("All vehicles with correct cargo and next destiation set to " + StationInfo.ToString(station))
-    //VehicleInfo.PrintList(scheduled_vehicles)
-    
-    return scheduled_vehicles.Count()
-}
 
 /* Stations with an existing stockpile of cargo */
 function StationInfo::StationsWithStockpile(station_type, cargo)
@@ -441,34 +419,76 @@ function StationInfo::PrintVehiclesToStationString(station, vehiclelist)
 }
 
 
-function StationInfo::VehiclesEnrouteToStation(station, cargotype)
+function _VehiclesOrderedToStationByCargo(station, cargotype)
 {
-	/* Returns a list of vehicles travelling to the station to service the specified cargo.
-	   cargotype: Set to null returns all vehicles.  Setting a specific cargotype returns all vehicles with capacity for that cargo.
-	   */
-	
+	/*Returns the list of vehicles with the station somewhere in the order set.
+	 :param cargo_id cargotype: Reduces list to vehicles with capacity for the specified cargotype.  null returns all vehicles regardless of cargotype.
+	*/
 	//AILog.Info("List vehicles travelling to " + StationInfo.ToString(station)) 
 	local VehiclesToStation = AIVehicleList_Station(station)
 	if(cargotype != null)
 	{
 		VehiclesToStation.Valuate(AIVehicle.GetCapacity, cargotype)
-		VehiclesToStation.KeepAboveValue(1)
+		VehiclesToStation.KeepAboveValue(0)
 	}
 	
-	VehiclesToStation.Valuate(StationInfo._IsVehicleTravellingToStation, station)	
-	VehiclesToStation.KeepValue(1)
-	
-	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)	
-	//StationInfo.PrintVehiclesToStationString(station, VehiclesToStation)
-	 
 	return VehiclesToStation
+}
+
+
+function StationInfo::VehiclesEnrouteToStation(station, cargotype)
+{
+	/* Returns a list of vehicles travelling to the station to service the specified cargo.
+	   :param cargo_id cargotype: Reduces list to vehicles with capacity for the specified cargotype.  null returns all vehicles regardless of cargotype.
+	   */
+	
+	local enroute_vehicles = _VehiclesOrderedToStationByCargo(station, cargotype)
+	
+	enroute_vehicles.Valuate(StationInfo._IsVehicleTravellingToStation, station)	
+	enroute_vehicles.KeepValue(1)
+	
+	/*	 
+	if(scheduled_vehicles.Count() > 0) {
+		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroute_vehicles))
+	}  
+	*/
+	 
+	return enroute_vehicles
 }
 
 function StationInfo::NumVehiclesEnrouteToStation(station, cargotype)
 {
-	/* Returns a simple count of the number of vehicles travelling to the station */
+	/* Returns a simple count of the number of vehicles travelling to the station.
+	:param cargo_id cargotype: Reduces list to vehicles with capacity for the specified cargotype.  null returns all vehicles regardless of cargotype.
+	 */
 	local vehiclelist = StationInfo.VehiclesEnrouteToStation(station, cargotype)
 	return vehiclelist.Count()
+}
+
+function StationInfo::VehiclesScheduledToStation(station, cargotype)
+{
+	/* All vehicles that will be visiting the station at any point in the future.
+	   If carg*/
+	local scheduled_vehicles = _VehiclesOrderedToStationByCargo(station, cargotype)
+	
+	scheduled_vehicles.Valuate(VehicleInfo.NextStationScheduled)
+    scheduled_vehicles.KeepValue(station)
+    
+    /*
+	if(scheduled_vehicles.Count() > 0) {
+		AILog.Info("    Vehicles scheduled to " + StationInfo.VehiclesToStationString(station, scheduled_vehicles))
+	}  
+	*/
+    
+    return scheduled_vehicles
+}
+
+
+function StationInfo::NumVehiclesScheduledToStation(station, cargotype)
+{
+	/* Vehicles which will be visiting the station with cargo type */
+    local scheduled_vehicles = StationInfo.VehiclesScheduledToStation(station, cargotype)
+    return scheduled_vehicles.Count()
 }
 
 
@@ -505,11 +525,7 @@ function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
 	local enroutevehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
 	if(enroutevehicles == null)
 		AILog.Warning("Error, enroute vehicles is null")
-	
-	if(enroutevehicles.Count() > 0) {
-		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
-	}  
-	
+		
 	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
 	enroutevehicles.Valuate(AIVehicle.GetCargoLoad, cargotype)
 	
@@ -523,25 +539,17 @@ function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
 }
 
 
+
 function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 {
 	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles actively running to the station or already visiting and loading*/
 	local enroutevehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
-	if(enroutevehicles == null)
-		AILog.Warning("Error, enroute vehicles is null")
-	
-	if(enroutevehicles.Count() > 0) {
-		AILog.Info("    Vehicles enroute to " + StationInfo.VehiclesToStationString(station, enroutevehicles))
-	}  
-	
-	//TODO: Vehicles currently loading have the full capacity counted against the reserved cargo count.  Fix this.
-	enroutevehicles.Valuate(AIVehicle.GetCapacity, cargotype)
-	
-	local totalReservation = 0
-	foreach (v, capacity in enroutevehicles) 
-	{
-		totalReservation += capacity
-	}
-	
-	return totalReservation
+	return VehicleInfo.GetTotalCargoReservation(enroutevehicles, cargotype)
+}
+
+function StationInfo::GetScheduledReservedCargoCount(station, cargotype)
+{
+	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles actively running to the station or already visiting and loading*/
+	local scheduled_vehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
+	return VehicleInfo.GetTotalCargoReservation(scheduled_vehicles, cargotype)
 }
