@@ -221,6 +221,17 @@ function OrdersAI::CheckVehicles()
 			continue;
 		}
 		
+        if(VehicleInfo.IsStoppedAtDepot(vehicle))
+        {
+            continue;
+        }
+
+        if(VehicleInfo.IsYearsLeftReached(vehicle))
+        {
+            Scheduler.StopAtNearestDepot(vehicle)
+            continue
+        }
+
 		local routeupdate = Scheduler.CheckOrders(vehicle);
 		
 		if(routeupdate)

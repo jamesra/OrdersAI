@@ -756,9 +756,21 @@ function Scheduler::ScrubOrders(vehicle, MaxOrders)
 	}
 }
 
+function Scheduler::StopAtNearestDepot(vehicle)
+{
+    Scheduler.DispatchToStation(vehicle, 0, AIOrder.OF_GOTO_NEAREST_DEPOT | AIOrder.OF_NON_STOP_INTERMEDIATE | AIOrder.OF_STOP_IN_DEPOT)
+}
+
 function Scheduler::DispatchToStation(vehicle, station, flags)
 {
-	AILog.Info("Dispatching " + VehicleInfo.ToString(vehicle) + " to " + StationInfo.ToString(station));
+    if(flags & AIOrder.OF_GOTO_NEAREST_DEPOT)
+    {
+	    AILog.Info("Dispatching " + VehicleInfo.ToString(vehicle) + " to nearest depot and stopping there");
+    }
+    else
+    {
+	    AILog.Info("Dispatching " + VehicleInfo.ToString(vehicle) + " to " + StationInfo.ToString(station));
+    }
 	
 	AIOrder.AppendOrder(vehicle, AIStation.GetLocation(station), flags)
 	
