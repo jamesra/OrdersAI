@@ -555,3 +555,52 @@ function StationInfo::GetScheduledReservedCargoCount(station, cargotype)
 	local scheduled_vehicles = StationInfo.VehiclesScheduledToStation(station, cargotype)
 	return VehicleInfo.GetTotalCargoReservation(scheduled_vehicles, cargotype)
 }
+
+function StationInfo::EstimatedProduction(station, cargotype, ticks)
+{
+	/*	Returns the estimated increase in cargo stockpile due to industry productoin */
+	local industries = StationInfo.GetSupplyIndustries(station, cargotype)
+	
+	industries.Valuate(IndustryInfo.EstimateProduction, cargotype, ticks)
+	
+	local production_total = 0
+	foreach(ind, production in industries) 
+	{
+		production_total += production
+	}
+	
+	return production_total
+}
+
+
+/*static*/ function StationInfo::GetSupplyIndustries(station_id, cargo_id)
+{
+	// Get the acceptance tiles
+	local supply_tiles = SLStation.GetSupplyCoverageTiles(station_id);
+
+	// For supply it is enough to cover any tile of the industry independent on
+	// which tiles that actually have the supply coded at them.
+	supply_tiles.Valuate(AIIndustry.GetIndustryID);
+	
+	local industries = AIList()
+
+	foreach(_, industry_id in supply_tiles)
+	{
+		if(AIIndustry.IsValidIndustry(industry_id))
+		{
+			local ind_type = AIIndustry.GetIndustryType(industry_id);
+			if(SLIndustry.IsCargoProduced(industry_id, cargo_id))
+			{
+				if(!industries.HasItem(industry_id))
+					industries.AddItem(industry_id, industry_id)
+					
+				// (neglecting the fact that if there are more than 2
+				// stations near the industry, not all of them will
+				// be supplied by cargo) 
+			}
+		}
+	}
+	
+	// No covered industry found
+	return industries
+}

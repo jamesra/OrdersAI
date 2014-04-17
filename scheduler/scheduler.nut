@@ -27,6 +27,7 @@ SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
 SLStation <- SuperLib.Station;
 SLIndustry <- SuperLib.Industry;
+SLEngine <- SuperLib.Engine;
 
 //Tile <- SuperLib.Tile
 
@@ -321,6 +322,22 @@ function Scheduler::GetRatingWeight(station, cargo)
 	}
 }
 
+
+function Scheduler::EstimateProduction(station, vehicle, cargotype)
+{
+	/* Returns how many new units of cargo will be waiting when the vehicle arrives */
+		
+	local travel_time = VehicleInfo.GetIdealTraveltime(vehicle, station)
+	local production_estimate = StationInfo.EstimatedProduction(station, cargotype, travel_time)
+	 
+	if(production_estimate > 0)
+	{
+		AILog.Info("  Production estimate for " + travel_time.tostring() + " ticks of travel: +" + production_estimate.tostring() + " units")
+	}
+	 
+	return production_estimate
+}
+
  
 function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
 {
@@ -332,8 +349,9 @@ function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
 	 local reservedcargo = StationInfo.GetEnrouteReservedCargoCount(station, cargotype) + StationInfo.GetLoadingReservedCargoCount(station, cargotype)
 	 local waitingcargo = AIStation.GetCargoWaiting(station, cargotype)
 	 local vehiclecapacity = AIVehicle.GetCapacity(vehicle, cargotype)
+	 local production_estimate = Scheduler.EstimateProduction(station, vehicle, cargotype)
 
-	 local unreservedcargo = waitingcargo - reservedcargo;
+	 local unreservedcargo = (waitingcargo + production_estimate) - reservedcargo;
 	
 	 if(vehiclecapacity < unreservedcargo) {
 	 	return 1.0;
