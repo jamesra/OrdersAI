@@ -60,17 +60,35 @@ function IndustryInfo::AcceptingIndustryLocations(cargotype)
 }
 
 
+function _GetStationSpread()
+{
+	if(!AIGameSettings.IsValid("station_spread"))
+	{
+		AILog.Warn("  station_spread is not a valid setting.  Using conservative fallback max possible value of 64")
+		return 64	
+	}
+	
+	return AIGameSettings.GetValue("station_spread")
+}
+
+function _GetMaxPossibleStationCoverage(station)
+{
+	//Distance beyond which there is no chance an industry is served by a station
+	//TODO: This seems to be the correct calculation, but it feels a bit fudged.  There may be a better way of getting the exact value
+	return (AIStation.GetStationCoverageRadius(station)*2) + _GetStationSpread()
+}
+
 function IndustryPossiblyWithinStationRadius(station, industrylist)
 {
 	local slocation  = AIStation.GetLocation(station)
-	//TODO: Should probably use *2 and add the max station spread from game configuration here instead of * 5
-	local coverageradius = AIStation.GetStationCoverageRadius(station) * 5
-	//AILog.Info(StationInfo.ToString(station) + " coverage radius = " + coverageradius.tostring())
+	
+	local coveragedistance = _GetMaxPossibleStationCoverage(station)
+	//AILog.Info(StationInfo.ToString(station) + " coverage distance = " + coveragedistance.tostring())
 	foreach(industry, ilocation in industrylist)
 	{
 		local distance = AIStation.GetDistanceManhattanToTile(station, ilocation)
 		//AILog.Info("Distance " + IndustryInfo.ToString(industry) + " to " + StationInfo.ToString(station) + " = " + distance.tostring())
-		if(coverageradius >= distance)
+		if(coveragedistance >= distance)
 		{
 			//AILog.Info("Distance " + IndustryInfo.ToString(industry) + " to " + StationInfo.ToString(station) + " = " + distance.tostring())
 			return true
@@ -78,6 +96,24 @@ function IndustryPossiblyWithinStationRadius(station, industrylist)
 	}
 	
 	return false
+}
+
+function _TicksPerMonth()
+{
+	return 2220.0 /* 74 ticks per day, 30 days per month */	
+}
+
+function IndustryInfo::EstimateProduction(industry_id, cargo_type, ticks)
+{
+	/* Return the number of units we expect the industry to produce in the given number of ticks based on past performance */
+	local past_month_prod = AIIndustry.GetLastMonthProduction(industry_id, cargo_type)
+	local prod_per_tick = past_month_prod / _TicksPerMonth()
+	local production = prod_per_tick * ticks
+	
+	if(production.tointeger() > 0)
+		AILog.Info("  Estimating " + production.tostring() + " production for " + IndustryInfo.ToString(industry_id) + " in " + ticks.tostring() + " ticks")
+		
+	return production.tointeger()
 }
 
 
