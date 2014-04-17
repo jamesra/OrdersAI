@@ -44,12 +44,16 @@ class StationInfo
 	static function VehiclesEnrouteToStation(station, cargo);
 	
     static function NumVehiclesEnrouteToStation(station, cargotype);
+    
+    static function GetEnrouteReservedCargoCount(station, cargotype);
+	    
+    static function VehiclesScheduledToStation(station, cargo);
 	
-	static function GetReservedCargoCount(station, cargotype);
+    static function NumVehiclesScheduledToStation(station, cargotype);
+	
+	static function GetScheduledReservedCargoCount(station, cargotype);
 	
 	static function GetLoadingReservedCargoCount(station, cargotype);
-	
-	static function GetEnrouteReservedCargoCount(station, cargotype);
 };
 
 
@@ -538,8 +542,6 @@ function StationInfo::GetEnrouteCargoDeliveryCount(station, cargotype)
 	return totalReservation
 }
 
-
-
 function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 {
 	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles actively running to the station or already visiting and loading*/
@@ -550,6 +552,6 @@ function StationInfo::GetEnrouteReservedCargoCount(station, cargotype)
 function StationInfo::GetScheduledReservedCargoCount(station, cargotype)
 {
 	/*Returns the quantity of cargo we expect to be transported away from the station by vehicles actively running to the station or already visiting and loading*/
-	local scheduled_vehicles = StationInfo.VehiclesEnrouteToStation(station, cargotype)
+	local scheduled_vehicles = StationInfo.VehiclesScheduledToStation(station, cargotype)
 	return VehicleInfo.GetTotalCargoReservation(scheduled_vehicles, cargotype)
 }
