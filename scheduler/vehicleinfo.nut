@@ -104,7 +104,7 @@ function VehicleInfo::GetYearsLeft(vehicle)
 {
     // age left returned in days
     local daysleft = AIVehicle.GetAgeLeft(vehicle)
-    AILog.Info(VehicleInfo.ToString(vehicle) + " has " + daysleft.tostring() + " days left")
+    //AILog.Info(VehicleInfo.ToString(vehicle) + " has " + daysleft.tostring() + " days left")
     return (daysleft / 365)
 }
 
