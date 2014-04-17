@@ -1,5 +1,7 @@
  
 
+SLEngine <- SuperLib.Engine
+
 class VehicleInfo
 {
 	static function VehicleString(vehicle);
@@ -258,3 +260,14 @@ function VehicleInfo::GetTotalCargoReservation(vehicle_list, cargotype)
 	
 	return totalReservation
 }
+
+function VehicleInfo::GetIdealTraveltime(vehicle, station)
+{
+	/*Returns number of game ticks to travel to the specfied station assuming a direct path.  In the actual game this is unlikely to be true for trains and automobiles.
+	  Based on:  https://wiki.openttd.org/Game_mechanics
+	*/
+	local engine = AIVehicle.GetEngineType(vehicle)
+	local distance = AIStation.GetDistanceManhattanToTile(station, AIVehicle.GetLocation(vehicle))
+		
+	return SLEngine.GetFullSpeedTraveltime(engine, distance)
+} 
