@@ -257,3 +257,4 @@ function VehicleInfo::GetTotalCargoReservation(vehicle_list, cargotype)
 	}
 	
 	return totalReservation
+}
