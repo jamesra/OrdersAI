@@ -27,6 +27,8 @@ class StationInfo
 	
 	static function StationUnvisited(station, cargo);
 	
+	static function IsRatingBelowMinRating(rating);
+	
 	static function GetRatingWeight(station, cargo);
 	
 	static function GetSupplyWeight(station, vehicle, cargo);
@@ -54,6 +56,8 @@ class StationInfo
 	static function GetScheduledReservedCargoCount(station, cargotype);
 	
 	static function GetLoadingReservedCargoCount(station, cargotype);
+	
+	static function AvailableCargo(station, cargotype, ticks_into_future);
 };
 
 
@@ -114,6 +118,14 @@ function StationInfo::StationUnvisited(station, cargo)
 	AILog.Info("  " + StationInfo.ToString(station) + " is unvisited for " + AICargo.GetCargoLabel(cargo))
 
 	return true
+}
+
+
+function StationInfo::IsRatingBelowMinRating(rating)
+{
+	/* Return true if station service rating is below threshold set by user for special consideration */ 
+   //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight) 	
+	return rating < Weights.ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
 }
 
 
@@ -603,4 +615,18 @@ function StationInfo::EstimatedProduction(station, cargotype, ticks)
 	
 	// No covered industry found
 	return industries
+}
+
+
+function StationInfo::AvailableCargo(station, cargotype, ticks_into_future)
+{
+	local waitingcargo = AIStation.GetCargoWaiting(station, cargotype)
+	local production_estimate = 0 //Commented due to performance issues.  StationInfo.EstimatedProduction(station, cargotype, ticks_into_future)
+	
+	if(production_estimate > 0)
+	{
+		AILog.Info("  Production estimate for " + ticks_into_future.tostring() + " ticks of travel: +" + production_estimate.tostring() + " units")
+	}
+	
+	return waitingcargo + production_estimate
 }

@@ -22,6 +22,7 @@ import("util.superlib", "SuperLib", 38);
 require("stationinfo.nut")
 require("vehicleinfo.nut")
 require("industryinfo.nut")
+require("weights.nut")
 
 SLHelper <- SuperLib.Helper;
 SLVehicle <- SuperLib.Vehicle;
@@ -290,105 +291,62 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 }
 
 
-function ServiceRatingToWeight(rating)
+function CalculateUnderservedStationPickupAttractiveness(station, vehcile, cargotype)
 {
-	return 1.0 - (rating / 100.0)
-}
-
-function WeightToServiceRating(weight)
-{
-	return (1.0 - weight) * 100.0	
-}
-
-
-/* Returns a scalar from 0.0 to 1.0. Lower ratings return a higher scalar */
-function Scheduler::GetRatingWeight(station, cargo)
-{
-	if(AIStation.HasCargoRating(station, cargo)) 
-	{
-		local weight = ServiceRatingToWeight(AIStation.GetCargoRating(station, cargo))
-		local good_enough_weight = ServiceRatingToWeight(OrdersAI.GetSetting("good_enough_rating"))
-		//The logic looks reversed because weights are reversed.  
-		if (weight < good_enough_weight)
-		{
-			weight = good_enough_weight
-		}
-		
-		return weight
-	}
-	else
-	{
-		return ServiceRatingToWeight(OrdersAI.GetSetting("min_rating")-1)
-	}
-}
-
-
-function Scheduler::EstimateProduction(station, vehicle, cargotype)
-{
-	/* Returns how many new units of cargo will be waiting when the vehicle arrives */
-		
-	local travel_time = VehicleInfo.GetIdealTraveltime(vehicle, station)
-	local production_estimate = StationInfo.EstimatedProduction(station, cargotype, travel_time)
-	 
-	if(production_estimate > 0)
-	{
-		AILog.Info("  Production estimate for " + travel_time.tostring() + " ticks of travel: +" + production_estimate.tostring() + " units")
-	}
-	 
-	return production_estimate
-}
-
- 
-function Scheduler::GetSupplyWeight(station, vehicle, cargotype)
-{
-	/* If a station has enough supply to fill our vehicle it is rated a 1.0
-	 Excess cargo is not considered.  Otherwise it rated according to the fraction
-	 of the vehicle we can fill */
-	 //AILog.Info("GetSupplyWeight " + StationInfo.ToString(station))
-	 
-	 local reservedcargo = StationInfo.GetEnrouteReservedCargoCount(station, cargotype) + StationInfo.GetLoadingReservedCargoCount(station, cargotype)
-	 local waitingcargo = AIStation.GetCargoWaiting(station, cargotype)
-	 local vehiclecapacity = AIVehicle.GetCapacity(vehicle, cargotype)
-	 local production_estimate = Scheduler.EstimateProduction(station, vehicle, cargotype)
-
-	 local unreservedcargo = (waitingcargo + production_estimate) - reservedcargo;
-	
-	 if(vehiclecapacity < unreservedcargo) {
-	 	return 1.0;
-	 }
-	 else
-	 {
-	 	if(StationInfo.StationUnvisited(station, cargotype)) {
-	 		return 1.0
-	 	}
-	 	else {
-	 		return unreservedcargo.tofloat() / vehiclecapacity.tofloat()
-	 	}
-	 }
+	/* We are more conservative with station supply estimates since they are likely to
+	   generate small amounts of cargo and could be easily flooded */
+	/*Use min rating weight so that a tie can result.*/
+ 	local min_ratingweight = Weights.ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
+ 	local num_vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype)
+ 	local supply_weight = 0
+ 	if(num_vehicles == 0)
+ 	{
+ 		supply_weight = 1.0 
+ 	}
+ 	else
+ 	{
+ 		/* Underserved, but a vehicle is already on the way.*/
+ 		supply_weight = Weights.SupplyWeightForUnderservedStation(station, vehicle, cargotype) 
+ 	}
+ 	
+ 	return min_ratingweight * supply_weight
 }
 
 function StationPickupAttractiveness(station, vehicle, cargotype)
 {	
-	local ratingweight = Scheduler.GetRatingWeight(station, cargotype) 
-    local supplyweight = Scheduler.GetSupplyWeight(station, vehicle, cargotype)
-    local min_ratingweight = ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
+	/*Returns an integer indicating how attractive a station is for a pickup. 
+	  If the top scores are tied a runoff process is followed, in the case of
+	  cargo the runoff is based on distance.  For this reason this function 
+	  tends to encourage ties in ambiguous situations such as multiple stations
+	  with adequate ratings and supply.*/ 
+	
+	local rating = Weights.GetServiceRating(station, cargotype) 
+    
+    
     //local output = "  " + StationInfo.ToString(station) + ": ratingweight=" + ratingweight.tostring() + ", supplyweight=" + supplyweight.tostring()
     //AILog.Info(output)
 	local score = 0
-
-    //The logic looks reversed because weights are reversed.  Equivalient to WeightToServiceRating(ratingweight) < WeightToServiceRating(min_ratingweight)
-    if(ratingweight > min_ratingweight && supplyweight < 1)
-    {
-        AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + WeightToServiceRating(ratingweight).tostring() + "%, allowed min." + WeightToServiceRating(min_ratingweight).tostring() + "%, ignoring supply")
-
-        // avoid a rush of vehicles to the station:
-        // lower score the more vehicles are scheduled to the station
-        local num_vehicles = StationInfo.NumVehiclesScheduledToStation(station, cargotype)
-        supplyweight = 1.5 / (num_vehicles + 1)
-	} 
 	
-	score = supplyweight * ratingweight
-
+	if(StationInfo.StationUnvisited(station, cargotype)) {
+	 	AILog.Info("   Unvisited station " + StationInfo.ToString(station) + " with " + rating.tostring() + "%")
+	 	 /* The score is arbitrary, but should be a high score that will attract vehicles fairly quickly. 
+	 	    If we have a new station that is unrated it is probably better to leave it unrated
+	 		if a closer underserved station can be visited first. Once a single vehicle is scheduled
+	 		to an unvisited station the second vehicle will follow the underserved station logic*/
+	 	score = Weights.ServiceRatingToWeight(OrdersAI.GetSetting("min_rating"))
+	}
+	else if(StationInfo.IsRatingBelowMinRating(rating))
+	{
+		AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + rating.tostring() + "%, allowed min." + min_rating.tostring() + "%, ignoring supply")
+		score = CalculateUnderservedStationPickupAttractiveness(station, vehicle, cargotype)
+	}
+	else
+	{
+		/* A healthy station.*/
+		local supplyweight = Weights.SupplyWeightForHealthyStation(station, vehicle, cargotype)
+	 	score = supplyweight *  Weights.ServiceRatingToWeight(rating)
+	}
+	 
 	return (score * 100.0).tointeger()
 }
 
