@@ -22,9 +22,9 @@ class OrdersAI extends AIInfo {
 	function GetName()          { return "Orders Assistant AI"; }
 	function GetShortName()     { return "OrdA"; }
 	function GetDescription()   { return "An AI assistant which manages vehicle schedules to reduce the micromanagement burden.  Great if you want to focus on network optimization or have small kids who want to play.  This AI is intended to play on the same company as the player.  Thus at the beginning of the game the player should use CTRL+ALT+C to activate cheat mode and switch to the AI's company.  See the readme.rst for more detail."; }
-	function GetVersion()       { return 9; }
+	function GetVersion()       { return 10; }
 	function MinVersionToLoad() { return 1; }
-	function GetDate()          { return "2014-03-20"; }
+	function GetDate()          { return "2014-04-18"; }
 	function CreateInstance()   { return "OrdersAI"; }
 	function GetAPIVersion()    { return "1.4"; }
 	function UseAsRandomAI()    { return false; }
@@ -53,8 +53,8 @@ class OrdersAI extends AIInfo {
             _1 = "Full load any cargo",
             _2 = "Full load all cargo"
         });
-        AddSetting({name = "order_history_depth", description = "Number of old orders to keep in the vehicles schedule for informational purposes", min_value = 0, max_value = 10, easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1, flags = AICONFIG_INGAME});
-        AddSetting({name = "vehicle_years_left", description = "Number of years left before the vehilce is sent to depot and stops", min_value = -2, max_value = 10, easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1, flags = AICONFIG_INGAME});
+        AddSetting({name = "order_history_depth", description = "Number of old orders to keep in vehicle schedule for informational purposes", min_value = 0, max_value = 10, easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1, flags = AICONFIG_INGAME});
+        AddSetting({name = "vehicle_years_left", description = "Number of years left before the vehicle is sent to depot and stops", min_value = -2, max_value = 10, easy_value = 1, medium_value = 1, hard_value = 1, custom_value = 1, step_size = 1, flags = AICONFIG_INGAME});
 	}
 };
 
