@@ -291,7 +291,7 @@ function Scheduler::VehicleHasCargoToDeliver(vehicle, cargo)
 }
 
 
-function CalculateUnderservedStationPickupAttractiveness(station, vehcile, cargotype)
+function CalculateUnderservedStationPickupAttractiveness(station, vehicle, cargotype)
 {
 	/* We are more conservative with station supply estimates since they are likely to
 	   generate small amounts of cargo and could be easily flooded */
@@ -337,7 +337,7 @@ function StationPickupAttractiveness(station, vehicle, cargotype)
 	}
 	else if(StationInfo.IsRatingBelowMinRating(rating))
 	{
-		AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + rating.tostring() + "%, allowed min." + min_rating.tostring() + "%, ignoring supply")
+		AILog.Info("   Low service rating @ " + StationInfo.ToString(station) + " with " + rating.tostring() + "%, allowed min." + OrdersAI.GetSetting("min_rating").tostring() + "%, ignoring supply")
 		score = CalculateUnderservedStationPickupAttractiveness(station, vehicle, cargotype)
 	}
 	else
@@ -480,8 +480,6 @@ function Scheduler::RouteToTownPickup(vehicle)
 	stockpilestations = RemoveVehicleCurrentStation(stockpilestations, vehicle)
 	stockpilestations.Valuate(StationInfo.IsValidStationForVehicle, vehicle)
 	stockpilestations.KeepValue(1)
-	
-	
 	
 	if(stockpilestations.Count() == 0)
 	{
